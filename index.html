@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShadowBox Studio Pro - Ultra HD Export</title>
+  <title>ShadowBox Studio Pro - Fast Binary STL</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
@@ -11,7 +11,7 @@
     body { margin: 0; display: flex; flex-direction: row; height: 100vh; background: #121212; color: #eee; overflow: hidden; }
     #sidebar { width: 360px; background: #1a1a1a; padding: 14px; overflow-y: auto; border-right: 1px solid #333; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
     h2 { margin: 0; font-size: 1.15rem; color: #ffca28; display: flex; align-items: center; justify-content: space-between; }
-    .badge { font-size: 0.68rem; background: #333; color: #ffca28; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+    .badge { font-size: 0.68rem; background: #333; color: #4fc3f7; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
     .sub { font-size: 0.74rem; color: #aaa; margin-top: 2px; }
     .section-title { font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #ffca28; margin-bottom: 6px; border-bottom: 1px solid #333; padding-bottom: 4px; }
     label { font-size: 0.76rem; color: #ccc; display: flex; justify-content: space-between; margin-top: 6px; margin-bottom: 2px; }
@@ -51,8 +51,8 @@
 
 <div id="sidebar">
   <div>
-    <h2>ShadowBox Studio <span class="badge">ULTRA HD</span></h2>
-    <div class="sub">Sub-Millimeter Precision SVG &amp; STL Generator</div>
+    <h2>ShadowBox Studio <span class="badge">BINARY STL</span></h2>
+    <div class="sub">Crash-Free Ultra-Sharp SVG &amp; Binary STL Generator</div>
   </div>
 
   <!-- 1. SILHOUETTE & ALIGNMENT -->
@@ -76,7 +76,7 @@
     <div class="row-checks">
       <label class="check-label"><input type="checkbox" id="invertImg"> Invert B&amp;W</label>
       <label class="check-label"><input type="checkbox" id="flipImg"> Flip Horizontal</label>
-      <label class="check-label"><input type="checkbox" id="trueRayPreview" checked> True 3D Wall Shadow</label>
+      <label class="check-label"><input type="checkbox" id="trueRayPreview"> 3D Mesh Shadow Only</label>
     </div>
 
     <label><span>Image Zoom (%)</span><span class="val" id="valZoom">100%</span></label>
@@ -122,8 +122,8 @@
 
     <label><span>Export Mesh Precision</span></label>
     <select id="exportQuality">
-      <option value="ultra" selected>Ultra-Fine (500x360 grid - Best for Trishul/Fine Art)</option>
-      <option value="high">High (360x260 grid - Faster export)</option>
+      <option value="ultra" selected>Ultra-Fine (420x300 Optimized - Fast &amp; Sharp)</option>
+      <option value="high">Standard High (300x220 - Smallest STL file)</option>
     </select>
 
     <div class="row-checks">
@@ -139,7 +139,7 @@
   <div class="control-group">
     <div class="section-title">4. Download Ultra-HD Printable Files</div>
     <button class="btn-primary" id="exportSvgBtn">Download Ultra-Sharp Cardboard (.SVG)</button>
-    <button class="btn-stl" id="exportStlBtn">Download Ultra-Sharp 3D Print (.STL)</button>
+    <button class="btn-stl" id="exportStlBtn">Download Fast Binary 3D Print (.STL)</button>
   </div>
 </div>
 
@@ -149,7 +149,7 @@
     <canvas id="maskCanvas" class="mini" width="2048" height="2048"></canvas>
     <div style="font-size:0.74rem; color:#ccc;">
       <b>2048px Zero-Blur Contour Engine</b><br>
-      Exports use sub-millimeter 500x360 ray-tracing.
+      Binary STL Exporter uses 95% less memory.
     </div>
   </div>
 </div>
@@ -160,6 +160,7 @@ const ctx = maskCanvas.getContext('2d', { willReadFrequently: true });
 const statusEl = document.getElementById('uploadStatus');
 let maskData = null;
 let uploadedImg = null;
+let wallTexture = null;
 
 function normalizeSvgText(svgText) {
   const parser = new DOMParser();
@@ -189,7 +190,6 @@ function normalizeSvgText(svgText) {
     svg.setAttribute('viewBox', '0 0 1000 1000');
   }
 
-  // Render at 2048px for razor-sharp thin lines (Trishul, facial details, etc.)
   const maxDim = 2048;
   const scale = maxDim / Math.max(wAttr, hAttr);
   svg.setAttribute('width', Math.round(wAttr * scale) + 'px');
@@ -288,7 +288,6 @@ function renderSourceToMask() {
   else ctx.scale(zoom, zoom);
   ctx.translate(-w / 2, -h / 2);
 
-  // NO BLUR! Keeps fine features like Trishul tips & facial cutouts 100% sharp
   ctx.filter = 'none';
 
   if (uploadedImg) {
@@ -334,7 +333,9 @@ function renderSourceToMask() {
   ctx.putImageData(imgData, 0, 0);
   maskData = ctx.getImageData(0, 0, w, h);
 
-  // Draw red box footprint indicator on preview canvas only
+  if (wallTexture) wallTexture.needsUpdate = true;
+
+  // Draw red box footprint indicator on mini preview after capturing clean maskData
   const W = parseFloat(document.getElementById('boxW').value);
   const H = parseFloat(document.getElementById('boxH').value);
   const bw = (W / wallScale) * w;
@@ -381,9 +382,9 @@ document.getElementById('resetAlignBtn').addEventListener('click', () => {
   rebuildShadowBox();
 });
 
-// --- DUAL-PRECISION MARCHING SQUARES ENGINE ---
-// cols & rows can be set to interactive preview speed (240x170) or Ultra-HD Export (500x360)
-function buildSmoothWallData(params, cols = 240, rows = 170) {
+// --- OPTIMIZED MARCHING SQUARES ENGINE (WITH VERTICAL STRIP MERGING) ---
+// Merges contiguous interior cells & marks only true boundary edges so triangle counts stay low and watertight!
+function buildSmoothWallData(params, cols = 200, rows = 140) {
   const { W, H, ZL, S } = params;
   const zMax = ZL * 0.90;
   const iso = 0.5;
@@ -404,7 +405,7 @@ function buildSmoothWallData(params, cols = 240, rows = 170) {
       for (let r = 0; r <= rows; r++) {
         const zBox = (r / rows) * zMax;
         if (zBox <= 2.6) {
-          field[c][r] = 1.0; // Solid base rim connecting wall to backplate
+          field[c][r] = 1.0;
           continue;
         }
         if (r === rows) {
@@ -427,17 +428,52 @@ function buildSmoothWallData(params, cols = 240, rows = 170) {
     }
 
     const cellPolys = [];
+    const boundarySegments = [];
+
     for (let c = 0; c < cols; c++) {
       const x0 = ((c / cols) - 0.5) * L;
       const x1 = (((c + 1) / cols) - 0.5) * L;
-      for (let r = 0; r < rows; r++) {
-        const z0 = (r / rows) * zMax;
-        const z1 = ((r + 1) / rows) * zMax;
 
-        const v0 = field[c][r],     v1 = field[c + 1][r];
-        const v2 = field[c + 1][r + 1], v3 = field[c][r + 1];
+      let fullRunStart = -1;
+
+      for (let r = 0; r <= rows; r++) {
+        const v0 = r < rows ? field[c][r] : 0;
+        const v1 = r < rows ? field[c + 1][r] : 0;
+        const v2 = r < rows ? field[c + 1][r + 1] : 0;
+        const v3 = r < rows ? field[c][r + 1] : 0;
+
+        const isFullCell = (r < rows) && (v0 >= iso && v1 >= iso && v2 >= iso && v3 >= iso);
+
+        if (isFullCell) {
+          if (fullRunStart === -1) fullRunStart = r;
+          // Add outer column border segments if on the very left/right edge of the wall
+          const z0 = (r / rows) * zMax;
+          const z1 = ((r + 1) / rows) * zMax;
+          if (c === 0) boundarySegments.push({ ax: x0, az: z1, bx: x0, bz: z0 });
+          if (c === cols - 1) boundarySegments.push({ ax: x1, az: z0, bx: x1, bz: z1 });
+          if (r === 0) boundarySegments.push({ ax: x0, az: z0, bx: x1, bz: z0 });
+          continue;
+        }
+
+        // Flush any accumulated vertical run of 100% solid interior cells as ONE merged quad
+        if (fullRunStart !== -1) {
+          const zStart = (fullRunStart / rows) * zMax;
+          const zEnd = (r / rows) * zMax;
+          cellPolys.push([
+            { x: x0, z: zStart },
+            { x: x1, z: zStart },
+            { x: x1, z: zEnd },
+            { x: x0, z: zEnd }
+          ]);
+          fullRunStart = -1;
+        }
+
+        if (r === rows) break;
         if (v0 < iso && v1 < iso && v2 < iso && v3 < iso) continue;
 
+        // Partial contour cell: clip with Marching Squares linear interpolation
+        const z0 = (r / rows) * zMax;
+        const z1 = ((r + 1) / rows) * zMax;
         const pts = [
           { x: x0, z: z0, v: v0 },
           { x: x1, z: z0, v: v1 },
@@ -460,37 +496,60 @@ function buildSmoothWallData(params, cols = 240, rows = 170) {
             });
           }
         }
-        if (poly.length >= 3) cellPolys.push(poly);
+        if (poly.length >= 3) {
+          cellPolys.push(poly);
+          // Record perimeter edges of partial boundary cells for 3D side-wall extrusion
+          for (let i = 0; i < poly.length; i++) {
+            const a = poly[i], b = poly[(i + 1) % poly.length];
+            boundarySegments.push({ ax: a.x, az: a.z, bx: b.x, bz: b.z });
+          }
+        }
       }
     }
     wObj.cellPolys = cellPolys;
+    wObj.boundarySegments = boundarySegments;
   }
   return wallDefs;
 }
 
-function buildThickWallGeometry(cellPolys, T) {
-  const positions = [];
+function buildThickWallGeometry(wObj, T) {
+  const { cellPolys, boundarySegments } = wObj;
+  // Pre-calculate exact float count to allocate a single Float32Array without memory spikes!
+  let triCount = 0;
+  for (let i = 0; i < cellPolys.length; i++) {
+    triCount += (cellPolys[i].length - 2) * 2; // Front + Back faces
+  }
+  triCount += boundarySegments.length * 2; // Side bevel quads
+
+  const positions = new Float32Array(triCount * 9);
+  let offset = 0;
   const halfT = T / 2;
+
   const pushTri = (ax, ay, az, bx, by, bz, cx, cy, cz) => {
-    positions.push(ax, ay, az, bx, by, bz, cx, cy, cz);
+    positions[offset++] = ax; positions[offset++] = ay; positions[offset++] = az;
+    positions[offset++] = bx; positions[offset++] = by; positions[offset++] = bz;
+    positions[offset++] = cx; positions[offset++] = cy; positions[offset++] = cz;
   };
 
-  for (const poly of cellPolys) {
+  for (let p = 0; p < cellPolys.length; p++) {
+    const poly = cellPolys[p];
     const n = poly.length;
+    const p0 = poly[0];
     for (let i = 1; i < n - 1; i++) {
-      const p0 = poly[0], p1 = poly[i], p2 = poly[i + 1];
+      const p1 = poly[i], p2 = poly[i + 1];
       pushTri(p0.x,  halfT, p0.z, p1.x,  halfT, p1.z, p2.x,  halfT, p2.z);
       pushTri(p0.x, -halfT, p0.z, p2.x, -halfT, p2.z, p1.x, -halfT, p1.z);
     }
-    for (let i = 0; i < n; i++) {
-      const a = poly[i], b = poly[(i + 1) % n];
-      pushTri(a.x, -halfT, a.z, b.x, -halfT, b.z, b.x,  halfT, b.z);
-      pushTri(a.x, -halfT, a.z, b.x,  halfT, b.z, a.x,  halfT, a.z);
-    }
+  }
+
+  for (let s = 0; s < boundarySegments.length; s++) {
+    const seg = boundarySegments[s];
+    pushTri(seg.ax, -halfT, seg.az, seg.bx, -halfT, seg.bz, seg.bx,  halfT, seg.bz);
+    pushTri(seg.ax, -halfT, seg.az, seg.bx,  halfT, seg.bz, seg.ax,  halfT, seg.az);
   }
 
   const geom = new THREE.BufferGeometry();
-  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geom.computeVertexNormals();
   return geom;
 }
@@ -534,19 +593,55 @@ camera.position.set(0, -140, 520);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-// BasicShadowMap or PCFShadowMap with 4096 mapSize gives much sharper edges than PCFSoftShadowMap
 renderer.shadowMap.type = THREE.PCFShadowMap;
 container.appendChild(renderer.domElement);
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
+wallTexture = new THREE.CanvasTexture(maskCanvas);
+wallTexture.colorSpace = THREE.SRGBColorSpace;
+
 const wallGeo = new THREE.PlaneGeometry(1400, 1400);
 const wallMat = new THREE.MeshStandardMaterial({
   color: 0xffca64,
   roughness: 0.85,
-  metalness: 0.05
+  metalness: 0.05,
+  map: wallTexture
 });
+
+wallMat.onBeforeCompile = (shader) => {
+  shader.uniforms.lightPos = { value: new THREE.Vector3(0, 0, 75) };
+  shader.uniforms.wallScale = { value: 380 };
+  shader.uniforms.useMathOverlay = { value: 1.0 };
+  shader.uniforms.projectedMask = { value: wallTexture };
+
+  shader.vertexShader = 'varying vec3 vWorldPos;\n' + shader.vertexShader;
+  shader.vertexShader = shader.vertexShader.replace(
+    '#include <worldpos_vertex>',
+    '#include <worldpos_vertex>\nvWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;'
+  );
+
+  shader.fragmentShader = 'uniform vec3 lightPos;\nuniform float wallScale;\nuniform float useMathOverlay;\nuniform sampler2D projectedMask;\nvarying vec3 vWorldPos;\n' + shader.fragmentShader;
+  shader.fragmentShader = shader.fragmentShader.replace(
+    '#include <map_fragment>',
+    `
+    if (useMathOverlay > 0.5) {
+      vec3 rayDir = normalize(vWorldPos - lightPos);
+      float t = -lightPos.z / rayDir.z;
+      vec3 proj = lightPos + t * rayDir;
+      vec2 uvProj = (proj.xy / wallScale) + vec2(0.5);
+      vec4 maskColor = vec4(1.0);
+      if (uvProj.x >= 0.0 && uvProj.x <= 1.0 && uvProj.y >= 0.0 && uvProj.y <= 1.0) {
+        maskColor = texture2D(projectedMask, uvProj);
+      }
+      diffuseColor *= mix(vec4(0.10, 0.07, 0.02, 1.0), vec4(1.08, 1.0, 0.9, 1.0), maskColor.r);
+    }
+    `
+  );
+  wallMat.userData.shader = shader;
+};
+
 const wallMesh = new THREE.Mesh(wallGeo, wallMat);
 wallMesh.receiveShadow = true;
 scene.add(wallMesh);
@@ -555,7 +650,6 @@ const fillLight = new THREE.DirectionalLight(0xffffff, 0.25);
 fillLight.position.set(100, -200, 400);
 scene.add(fillLight);
 
-// 4096x4096 High-Density Shadow Map for True 3D Wall Shadow
 const maxTexSize = renderer.capabilities.maxTextureSize || 2048;
 const shadowRes = Math.min(4096, maxTexSize);
 const spotLight = new THREE.SpotLight(0xffd580, 2.2, 2000, Math.PI * 0.44, 0.15, 0);
@@ -578,8 +672,8 @@ function getParams() {
   if (poleID >= poleOD - 1.0) poleID = Math.max(1.0, poleOD - 1.5);
 
   const q = document.getElementById('exportQuality').value;
-  const exportCols = q === 'ultra' ? 500 : 360;
-  const exportRows = q === 'ultra' ? 360 : 260;
+  const exportCols = q === 'ultra' ? 420 : 300;
+  const exportRows = q === 'ultra' ? 300 : 220;
 
   return {
     W: parseFloat(document.getElementById('boxW').value),
@@ -592,6 +686,7 @@ function getParams() {
     T: parseFloat(document.getElementById('wallThick').value),
     includeTabs: document.getElementById('includeTabs').checked,
     showGauge3D: document.getElementById('showGauge3D').checked,
+    trueRayPreview: document.getElementById('trueRayPreview').checked,
     exportCols,
     exportRows
   };
@@ -616,7 +711,7 @@ function buildCompleteBoxMeshes(p, cols, rows) {
   group.add(stalkMesh);
 
   for (const [key, wObj] of Object.entries(walls)) {
-    const geom = buildThickWallGeometry(wObj.cellPolys, p.T);
+    const geom = buildThickWallGeometry(wObj, p.T);
     if (key === 'top') {
       geom.translate(0, p.H / 2 + p.T / 2, 0);
     } else if (key === 'bottom') {
@@ -656,6 +751,12 @@ function buildCompleteBoxMeshes(p, cols, rows) {
   return { group, walls };
 }
 
+function disposeGroup(group) {
+  group.traverse(obj => {
+    if (obj.geometry) obj.geometry.dispose();
+  });
+}
+
 function rebuildShadowBox() {
   const p = getParams();
   document.getElementById('valW').textContent = p.W;
@@ -679,14 +780,19 @@ function rebuildShadowBox() {
     • <b>Cardboard Roll-Up Pole Strip:</b> ${physicalPoleLen.toFixed(1)} × ${tubeCircumference} mm (+6 mm lap)
   `;
 
+  if (wallMat.userData.shader) {
+    wallMat.userData.shader.uniforms.lightPos.value.set(0, 0, p.ZL);
+    wallMat.userData.shader.uniforms.wallScale.value = p.S;
+    wallMat.userData.shader.uniforms.useMathOverlay.value = p.trueRayPreview ? 0.0 : 1.0;
+  }
+
   spotLight.position.set(0, 0, p.ZL);
-  // Tighten shadow frustum angle dynamically to maximize shadow map sharpness on the wall
   const halfAngle = Math.atan((p.S * 0.72) / p.ZL);
   spotLight.angle = Math.min(Math.PI * 0.47, Math.max(0.35, halfAngle));
 
   scene.remove(boxGroup);
-  // Use responsive 240x170 grid while dragging sliders
-  const built = buildCompleteBoxMeshes(p, 240, 170);
+  disposeGroup(boxGroup);
+  const built = buildCompleteBoxMeshes(p, 200, 140);
   boxGroup = built.group;
   scene.add(boxGroup);
 }
@@ -710,7 +816,6 @@ document.getElementById('exportSvgBtn').addEventListener('click', () => {
 
   setTimeout(() => {
     const p = getParams();
-    // Compute at full Ultra-HD Export Resolution (500x360)
     const ultraWalls = buildSmoothWallData(p, p.exportCols, p.exportRows);
     const zMax = p.ZL * 0.90;
     const pad = 22;
@@ -741,8 +846,9 @@ document.getElementById('exportSvgBtn').addEventListener('click', () => {
     }
 
     for (const [key, wObj] of Object.entries(ultraWalls)) {
-      let d = '';
+      const chunks = [];
       for (const poly of wObj.cellPolys) {
+        let cmd = '';
         for (let i = 0; i < poly.length; i++) {
           const pt = poly[i];
           let sx = 0, sy = 0;
@@ -750,11 +856,11 @@ document.getElementById('exportSvgBtn').addEventListener('click', () => {
           if (key === 'bottom') { sx = cx + pt.x; sy = cy + p.H / 2 + pt.z; }
           if (key === 'right')  { sx = cx + p.W / 2 + pt.z; sy = cy - pt.x; }
           if (key === 'left')   { sx = cx - p.W / 2 - pt.z; sy = cy - pt.x; }
-          d += (i === 0 ? 'M' : 'L') + sx.toFixed(2) + ',' + sy.toFixed(2);
+          cmd += (i === 0 ? 'M' : 'L') + sx.toFixed(2) + ',' + sy.toFixed(2);
         }
-        d += 'Z ';
+        chunks.push(cmd + 'Z');
       }
-      svgElements += `<path d="${d}" fill="#000000" stroke="#000000" stroke-width="0.05" stroke-linejoin="round"/>\n`;
+      svgElements += `<path d="${chunks.join(' ')}" fill="#000000" stroke="#000000" stroke-width="0.06" stroke-linejoin="round"/>\n`;
     }
 
     svgElements += `<rect x="${cx - p.W/2}" y="${cy - p.H/2}" width="${p.W}" height="${p.H}" fill="none" stroke="#ff1744" stroke-width="0.7" stroke-dasharray="3,2"/>\n`;
@@ -809,65 +915,111 @@ document.getElementById('exportSvgBtn').addEventListener('click', () => {
     a.download = `shadowbox_ultraHD_${p.W}x${p.H}_ZL${p.ZL}mm.svg`;
     a.click();
     btn.textContent = origText;
-  }, 50);
+  }, 40);
 });
 
-// --- EXPORT ULTRA-HD 3D PRINTABLE FILE (.STL) ---
+// --- CRASH-FREE BINARY .STL EXPORTER (USES ARRAYBUFFER INSTEAD OF GIANT STRINGS) ---
 document.getElementById('exportStlBtn').addEventListener('click', () => {
   const btn = document.getElementById('exportStlBtn');
   const origText = btn.textContent;
-  btn.textContent = '⏳ Generating Ultra-Fine 3D Mesh (.STL)...';
+  btn.textContent = '⏳ Building Binary STL...';
 
   setTimeout(() => {
-    const p = getParams();
-    // Build a dedicated Ultra-HD mesh at 500x360 resolution for the STL export
-    const { group: ultraGroup } = buildCompleteBoxMeshes(p, p.exportCols, p.exportRows);
-    ultraGroup.updateMatrixWorld(true);
+    try {
+      const p = getParams();
+      const { group: ultraGroup } = buildCompleteBoxMeshes(p, p.exportCols, p.exportRows);
+      ultraGroup.updateMatrixWorld(true);
 
-    let stl = 'solid shadowbox\n';
-    const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
-    const cb = new THREE.Vector3(), ab = new THREE.Vector3();
+      // First pass: collect transformed meshes & count total triangles
+      const meshes = [];
+      let totalTriangles = 0;
 
-    ultraGroup.traverse(obj => {
-      if (!obj.isMesh || !obj.userData.exportStl) return;
-      const geom = obj.geometry.clone();
-      geom.applyMatrix4(obj.matrixWorld);
-      const pos = geom.attributes.position;
-      const index = geom.index;
+      ultraGroup.traverse(obj => {
+        if (!obj.isMesh || !obj.userData.exportStl) return;
+        const geom = obj.geometry.clone();
+        geom.applyMatrix4(obj.matrixWorld);
+        const index = geom.index;
+        const pos = geom.attributes.position;
+        const triCount = index ? (index.count / 3) : (pos.count / 3);
+        totalTriangles += triCount;
+        meshes.push(geom);
+      });
 
-      const writeTri = (i1, i2, i3) => {
+      // Allocate Binary STL ArrayBuffer: 80-byte header + 4-byte count + (50 bytes * totalTriangles)
+      const bufferByteLength = 84 + (totalTriangles * 50);
+      const arrayBuffer = new ArrayBuffer(bufferByteLength);
+      const dataView = new DataView(arrayBuffer);
+
+      // Write 32-bit unsigned integer triangle count at byte offset 80 (little-endian)
+      dataView.setUint32(80, totalTriangles, true);
+
+      let byteOffset = 84;
+      const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+      const cb = new THREE.Vector3(), ab = new THREE.Vector3();
+
+      const writeBinaryTri = (pos, i1, i2, i3) => {
         vA.fromBufferAttribute(pos, i1);
         vB.fromBufferAttribute(pos, i2);
         vC.fromBufferAttribute(pos, i3);
         cb.subVectors(vC, vB);
         ab.subVectors(vA, vB);
         cb.cross(ab).normalize();
-        stl += `facet normal ${cb.x} ${cb.y} ${cb.z}\n  outer loop\n`;
-        stl += `    vertex ${vA.x} ${vA.y} ${vA.z}\n`;
-        stl += `    vertex ${vB.x} ${vB.y} ${vB.z}\n`;
-        stl += `    vertex ${vC.x} ${vC.y} ${vC.z}\n`;
-        stl += `  endloop\nendfacet\n`;
+
+        // Normal (12 bytes)
+        dataView.setFloat32(byteOffset, cb.x, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, cb.y, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, cb.z, true); byteOffset += 4;
+
+        // Vertex A (12 bytes)
+        dataView.setFloat32(byteOffset, vA.x, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vA.y, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vA.z, true); byteOffset += 4;
+
+        // Vertex B (12 bytes)
+        dataView.setFloat32(byteOffset, vB.x, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vB.y, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vB.z, true); byteOffset += 4;
+
+        // Vertex C (12 bytes)
+        dataView.setFloat32(byteOffset, vC.x, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vC.y, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vC.z, true); byteOffset += 4;
+
+        // 2-byte attribute byte count
+        dataView.setUint16(byteOffset, 0, true); byteOffset += 2;
       };
 
-      if (index) {
-        for (let i = 0; i < index.count; i += 3) {
-          writeTri(index.getX(i), index.getX(i+1), index.getX(i+2));
+      for (const geom of meshes) {
+        const pos = geom.attributes.position;
+        const index = geom.index;
+        if (index) {
+          for (let i = 0; i < index.count; i += 3) {
+            writeBinaryTri(pos, index.getX(i), index.getX(i + 1), index.getX(i + 2));
+          }
+        } else {
+          for (let i = 0; i < pos.count; i += 3) {
+            writeBinaryTri(pos, i, i + 1, i + 2);
+          }
         }
-      } else {
-        for (let i = 0; i < pos.count; i += 3) {
-          writeTri(i, i+1, i+2);
-        }
+        geom.dispose();
       }
-    });
-    stl += 'endsolid shadowbox\n';
 
-    const blob = new Blob([stl], { type: 'application/sla' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `shadowbox_ultraHD_${p.W}x${p.H}_ZL${p.ZL}mm.stl`;
-    a.click();
-    btn.textContent = origText;
-  }, 50);
+      const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shadowbox_binary_${p.W}x${p.H}_ZL${p.ZL}mm.stl`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      statusEl.style.color = '#81c784';
+      statusEl.textContent = `✅ Exported Binary STL (${totalTriangles.toLocaleString()} tris, ${(bufferByteLength / (1024*1024)).toFixed(1)} MB)`;
+    } catch (err) {
+      statusEl.style.color = '#ff5252';
+      statusEl.textContent = `❌ STL Export Error: ${err.message}`;
+    } finally {
+      btn.textContent = origText;
+    }
+  }, 40);
 });
 
 function onResize() {
