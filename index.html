@@ -3,43 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShadowBox CAD Studio - Pure Vector & Ray-Traced</title>
+  <title>ShadowBox CAD Studio Pro - Sub-Pixel Marching Squares & Conical Extrusion</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { margin: 0; display: flex; flex-direction: row; height: 100vh; background: #101014; color: #eee; overflow: hidden; }
-    #sidebar { width: 375px; background: #18181c; padding: 14px; overflow-y: auto; border-right: 1px solid #2e2e36; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
-    h2 { margin: 0; font-size: 1.15rem; color: #ffca28; display: flex; align-items: center; justify-content: space-between; }
-    .badge { font-size: 0.68rem; background: #004d40; color: #80cbc4; padding: 3px 8px; border-radius: 4px; font-weight: 700; border: 1px solid #00796b; }
-    .sub { font-size: 0.74rem; color: #9e9eae; margin-top: 2px; }
-    .section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #ffca28; margin-bottom: 6px; border-bottom: 1px solid #2e2e36; padding-bottom: 4px; }
-    label { font-size: 0.76rem; color: #ccc; display: flex; justify-content: space-between; margin-top: 6px; margin-bottom: 2px; }
+    body { margin: 0; display: flex; flex-direction: row; height: 100vh; background: #0e0e12; color: #eee; overflow: hidden; }
+    #sidebar { width: 385px; background: #16161d; padding: 14px; overflow-y: auto; border-right: 1px solid #2b2b36; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
+    h2 { margin: 0; font-size: 1.12rem; color: #ffca28; display: flex; align-items: center; justify-content: space-between; }
+    .badge { font-size: 0.66rem; background: #004d40; color: #80cbc4; padding: 3px 7px; border-radius: 4px; font-weight: 700; border: 1px solid #00796b; }
+    .sub { font-size: 0.73rem; color: #9e9eae; margin-top: 2px; }
+    .section-title { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #ffca28; margin-bottom: 6px; border-bottom: 1px solid #2b2b36; padding-bottom: 4px; }
+    label { font-size: 0.75rem; color: #ccc; display: flex; justify-content: space-between; margin-top: 6px; margin-bottom: 2px; }
     label span.val { color: #ffca28; font-weight: 600; font-variant-numeric: tabular-nums; }
-    input[type="range"], select { width: 100%; accent-color: #ffca28; cursor: pointer; background: #101014; color: #eee; border: 1px solid #3f3f4a; border-radius: 4px; padding: 5px; font-size: 0.78rem; }
-    .file-upload-btn { display: block; width: 100%; padding: 10px; background: #1e293b; color: #38bdf8; border: 1px dashed #38bdf8; border-radius: 6px; text-align: center; font-weight: 600; font-size: 0.82rem; cursor: pointer; margin-bottom: 4px; transition: 0.15s; }
+    input[type="range"], select { width: 100%; accent-color: #ffca28; cursor: pointer; background: #101014; color: #eee; border: 1px solid #3f3f4a; border-radius: 4px; padding: 5px; font-size: 0.77rem; }
+    .file-upload-btn { display: block; width: 100%; padding: 9px; background: #1e293b; color: #38bdf8; border: 1px dashed #38bdf8; border-radius: 6px; text-align: center; font-weight: 600; font-size: 0.8rem; cursor: pointer; margin-bottom: 4px; transition: 0.15s; }
     .file-upload-btn:hover { background: #26354d; }
     #svgUpload { display: none; }
-    #uploadStatus { font-size: 0.73rem; color: #4ade80; margin: 4px 0; min-height: 16px; word-break: break-all; }
-    .row-checks { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
-    .check-label { font-size: 0.76rem; color: #ddd; display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0; }
-    .control-group { background: #202026; padding: 10px 12px; border-radius: 8px; border: 1px solid #2e2e38; }
-    .specs-box { background: #13222b; border: 1px solid #23495d; padding: 9px 11px; border-radius: 8px; font-size: 0.75rem; line-height: 1.48; color: #d0ecf9; }
+    #uploadStatus { font-size: 0.72rem; color: #4ade80; margin: 4px 0; min-height: 16px; word-break: break-all; }
+    .row-checks { display: flex; gap: 10px; margin-top: 7px; flex-wrap: wrap; }
+    .check-label { font-size: 0.74rem; color: #ddd; display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0; }
+    .control-group { background: #1e1e26; padding: 10px 12px; border-radius: 8px; border: 1px solid #2c2c38; }
+    .specs-box { background: #12212a; border: 1px solid #214357; padding: 9px 11px; border-radius: 8px; font-size: 0.73rem; line-height: 1.48; color: #d0ecf9; }
     .specs-box b { color: #38bdf8; }
-    button { width: 100%; padding: 9px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 6px; font-size: 0.8rem; transition: 0.15s; }
+    button { width: 100%; padding: 9px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 6px; font-size: 0.79rem; transition: 0.15s; }
     .btn-primary { background: #ffca28; color: #111; }
     .btn-primary:hover { background: #ffb300; }
     .btn-stl { background: #38bdf8; color: #082032; }
     .btn-stl:hover { background: #0ea5e9; }
-    .btn-secondary { background: #32323c; color: #fff; }
-    .btn-secondary:hover { background: #42424f; }
+    .btn-secondary { background: #30303b; color: #fff; }
+    .btn-secondary:hover { background: #40404e; }
     .btn-row { display: flex; gap: 6px; }
     #svgPasteBox { display: none; margin-top: 8px; }
     #svgPasteInput { width: 100%; height: 70px; background: #101014; color: #eee; border: 1px solid #555; border-radius: 4px; font-size: 0.72rem; padding: 6px; font-family: monospace; }
     #main { flex: 1; display: flex; flex-direction: column; position: relative; height: 100%; }
     #viewport { width: 100%; height: 100%; }
-    #preview-bar { position: absolute; bottom: 12px; left: 12px; background: rgba(18,18,24,0.92); padding: 8px 12px; border-radius: 8px; border: 1px solid #3f3f4e; display: flex; gap: 10px; align-items: center; max-width: calc(100% - 24px); pointer-events: none; }
-    canvas.mini { background: #fff; border-radius: 4px; width: 60px; height: 60px; border: 1px solid #666; flex-shrink: 0; }
+    #preview-bar { position: absolute; bottom: 12px; left: 12px; background: rgba(16,16,22,0.92); padding: 8px 12px; border-radius: 8px; border: 1px solid #3f3f4e; display: flex; gap: 10px; align-items: center; max-width: calc(100% - 24px); pointer-events: none; }
+    canvas.mini { background: #fff; border-radius: 4px; width: 64px; height: 64px; border: 1px solid #666; flex-shrink: 0; }
     @media (max-width: 750px) {
       body { flex-direction: column-reverse; }
       #sidebar { width: 100%; height: 50vh; border-right: none; border-top: 1px solid #333; }
@@ -51,19 +51,19 @@
 
 <div id="sidebar">
   <div>
-    <h2>ShadowBox CAD <span class="badge">VECTOR + RAYTRACED</span></h2>
-    <div class="sub">True Bezier/Spline CAD Extrusion &amp; GPU Ray-Tracer</div>
+    <h2>ShadowBox CAD Pro <span class="badge">CONICAL + SUB-PIXEL</span></h2>
+    <div class="sub">Bilinear Marching Squares &amp; True Conical Ray Extrusion</div>
   </div>
 
-  <!-- 1. SILHOUETTE & ISLAND BRIDGING -->
+  <!-- 1. SILHOUETTE & SUB-PIXEL CONTOURING -->
   <div class="control-group">
-    <div class="section-title">1. Silhouette &amp; Vector Curve Tracing</div>
+    <div class="section-title">1. Image &amp; Sub-Pixel Iso-Contouring</div>
     <label for="svgUpload" class="file-upload-btn">📂 Open SVG / PNG / JPG Silhouette</label>
     <input type="file" id="svgUpload" accept="*/*">
-    <div id="uploadStatus">Status: Ready (Demo Silhouette Loaded)</div>
+    <div id="uploadStatus">Status: Ready (Built-in High-Precision Test Art)</div>
 
     <div class="btn-row">
-      <button class="btn-secondary" id="togglePasteBtn">Paste SVG Code</button>
+      <button class="btn-secondary" id="togglePasteBtn">Paste SVG</button>
       <button class="btn-secondary" id="loadDemoBtn">Demo Art</button>
       <button class="btn-secondary" id="resetAlignBtn">Reset Fit</button>
     </div>
@@ -73,21 +73,26 @@
       <button class="btn-primary" id="applyPasteBtn">Render Pasted SVG</button>
     </div>
 
-    <label><span>Floating Islands (e.g. Crescent Moon)</span></label>
+    <label><span>Floating Islands (Disconnected Features)</span></label>
     <select id="islandMode">
-      <option value="bridge" selected>Auto-Bridge to Main Body (Keeps All Details)</option>
+      <option value="bridge" selected>Auto-Bridge to Main Body (Preserves All Islands)</option>
+      <option value="keep">Keep Unbridged (For True Target Comparison)</option>
       <option value="remove">Remove Disconnected Floating Pieces</option>
     </select>
 
-    <label><span>Bridge Width (mm)</span><span class="val" id="valBridge">1.8</span></label>
-    <input type="range" id="bridgeWidth" min="1.2" max="4.0" step="0.2" value="1.8">
+    <label><span>Bridge Strut Width (mm)</span><span class="val" id="valBridge">1.6</span></label>
+    <input type="range" id="bridgeWidth" min="1.0" max="4.0" step="0.2" value="1.6">
 
-    <label><span>Vector Spline Smoothing Iterations</span><span class="val" id="valSmooth">5</span></label>
-    <input type="range" id="smoothIters" min="1" max="12" step="1" value="5">
+    <label><span>Taubin Curve Smoothing Passes</span><span class="val" id="valSmooth">3</span></label>
+    <input type="range" id="smoothIters" min="0" max="10" step="1" value="3">
+
+    <label><span>Contour Resolution (Sub-Pixel Grid)</span><span class="val" id="valRes">380</span></label>
+    <input type="range" id="gridRes" min="200" max="520" step="20" value="380">
 
     <div class="row-checks">
       <label class="check-label"><input type="checkbox" id="invertImg"> Invert B&amp;W</label>
       <label class="check-label"><input type="checkbox" id="flipImg"> Flip Horizontal</label>
+      <label class="check-label"><input type="checkbox" id="showDiff"> Show Error Diff on Wall</label>
     </div>
 
     <label><span>Image Zoom (%)</span><span class="val" id="valZoom">100%</span></label>
@@ -103,23 +108,23 @@
   <!-- 2. BOX & SHADOW DIMENSIONS -->
   <div class="control-group">
     <div class="section-title">2. Box &amp; Shadow Dimensions</div>
-    <label><span>Box Width (mm)</span><span class="val" id="valW">90</span></label>
+    <label><span>Inner Box Width W (mm)</span><span class="val" id="valW">90</span></label>
     <input type="range" id="boxW" min="40" max="180" value="90">
 
-    <label><span>Box Height (mm)</span><span class="val" id="valH">120</span></label>
+    <label><span>Inner Box Height H (mm)</span><span class="val" id="valH">120</span></label>
     <input type="range" id="boxH" min="40" max="220" value="120">
 
-    <label><span>Shadow Size on Wall (mm)</span><span class="val" id="valS">380</span></label>
+    <label><span>Shadow Size on Wall S (mm)</span><span class="val" id="valS">380</span></label>
     <input type="range" id="wallScale" min="180" max="650" value="380">
   </div>
 
-  <!-- 3. LIGHT POLE & SPECS -->
+  <!-- 3. LIGHT POLE & CONICAL CAD SPECS -->
   <div class="control-group">
-    <div class="section-title">3. Center Light Pole &amp; CAD Thickness</div>
-    <label><span>Target Light Distance Z_L (mm)</span><span class="val" id="valZ">75</span></label>
+    <div class="section-title">3. Point Light &amp; Conical Wall Geometry</div>
+    <label><span>Point Light Distance Z_L (mm)</span><span class="val" id="valZ">75</span></label>
     <input type="range" id="lightZ" min="40" max="150" value="75">
 
-    <label><span>LED Bulb Offset / Tip Allowance (mm)</span><span class="val" id="valLed">6</span></label>
+    <label><span>LED Bulb Tip Offset (mm)</span><span class="val" id="valLed">6</span></label>
     <input type="range" id="ledOffset" min="0" max="20" step="0.5" value="6">
 
     <label><span>Pole Outer Diameter (mm)</span><span class="val" id="valPoleOD">8.0</span></label>
@@ -128,23 +133,23 @@
     <label><span>Inner Wire Hole Diameter (mm)</span><span class="val" id="valPoleID">4.0</span></label>
     <input type="range" id="poleID" min="2" max="10" step="0.5" value="4.0">
 
-    <label><span>3D Wall Thickness (mm)</span><span class="val" id="valT">2.0</span></label>
-    <input type="range" id="wallThick" min="1.2" max="5" step="0.2" value="2.0">
+    <label><span>Conical Wall Thickness T (mm)</span><span class="val" id="valT">2.0</span></label>
+    <input type="range" id="wallThick" min="1.0" max="5.0" step="0.2" value="2.0">
 
     <div class="row-checks">
-      <label class="check-label"><input type="checkbox" id="includeTabs" checked> Add Glue Tabs to SVG</label>
-      <label class="check-label"><input type="checkbox" id="showRays" checked> Show 3D Light Cone</label>
+      <label class="check-label"><input type="checkbox" id="includeTabs" checked> Glue Tabs in SVG</label>
+      <label class="check-label"><input type="checkbox" id="showRays" checked> 3D Light Cone</label>
     </div>
   </div>
 
-  <!-- LIVE SUMMARY -->
+  <!-- LIVE ACCURACY SUMMARY -->
   <div class="specs-box" id="specsSummary"></div>
 
   <!-- 4. EXPORT -->
   <div class="control-group">
-    <div class="section-title">4. Export Pure-Vector SVG &amp; CAD STL</div>
-    <button class="btn-primary" id="exportSvgBtn">Download Smooth Bezier Cardboard (.SVG)</button>
-    <button class="btn-stl" id="exportStlBtn">Download Smooth CAD Extruded 3D Print (.STL)</button>
+    <div class="section-title">4. Export Sub-Pixel SVG &amp; Conical STL</div>
+    <button class="btn-primary" id="exportSvgBtn">Download Sub-Pixel Bezier Template (.SVG)</button>
+    <button class="btn-stl" id="exportStlBtn">Download Conical Ray-Aligned 3D Print (.STL)</button>
   </div>
 </div>
 
@@ -152,9 +157,9 @@
   <div id="viewport"></div>
   <div id="preview-bar">
     <canvas id="maskCanvas" class="mini" width="1024" height="1024"></canvas>
-    <div style="font-size:0.74rem; color:#ccc;">
-      <b>Real-Time GPU Ray-Traced Shadow Simulator</b><br>
-      True `THREE.ExtrudeGeometry` CAD walls + welded corner pillars.
+    <div style="font-size:0.73rem; color:#ccc; line-height:1.35;">
+      <b>True Physical Wall Ray-Caster + Conical Bevel CAD</b><br>
+      Simulates actual 3D wall intersections, bridges &amp; base rim on the wall.
     </div>
   </div>
 </div>
@@ -163,16 +168,30 @@
 const maskCanvas = document.getElementById('maskCanvas');
 const ctx = maskCanvas.getContext('2d', { willReadFrequently: true });
 const statusEl = document.getElementById('uploadStatus');
-let maskData = null;
+
+// High-resolution continuous grayscale field (0.0 = black shadow, 1.0 = white lit)
+const MASK_RES = 1024;
+let grayField = new Float32Array(MASK_RES * MASK_RES);
 let uploadedImg = null;
 let bridgedCountTotal = 0;
+let shadowAccuracyPct = 100.0;
 
-// Offscreen canvas for clean ray-tracing texture (without red UI box)
-const rayMaskCanvas = document.createElement('canvas');
-rayMaskCanvas.width = 1024;
-rayMaskCanvas.height = 1024;
-const rayCtx = rayMaskCanvas.getContext('2d');
-let wallRayTexture = null;
+// Offscreen canvas for the clean target image texture
+const targetTexCanvas = document.createElement('canvas');
+targetTexCanvas.width = MASK_RES;
+targetTexCanvas.height = MASK_RES;
+const targetTexCtx = targetTexCanvas.getContext('2d');
+let targetWallTexture = null;
+
+// Offscreen texture packing the 4 physical 3D walls (Top, Bottom, Left, Right)
+// so the GPU fragment shader ray-casts through the ACTUAL generated 3D wall geometry!
+const WALL_TEX_W = 512;
+const WALL_TEX_H = 512; // 4 bands of 128px height each
+const wallPackCanvas = document.createElement('canvas');
+wallPackCanvas.width = WALL_TEX_W;
+wallPackCanvas.height = WALL_TEX_H;
+const wallPackCtx = wallPackCanvas.getContext('2d');
+let physicalWallTexture = null;
 
 function normalizeSvgText(svgText) {
   const parser = new DOMParser();
@@ -202,7 +221,7 @@ function normalizeSvgText(svgText) {
     svg.setAttribute('viewBox', '0 0 1000 1000');
   }
 
-  const maxDim = 1024;
+  const maxDim = 2048;
   const scale = maxDim / Math.max(wAttr, hAttr);
   svg.setAttribute('width', Math.round(wAttr * scale) + 'px');
   svg.setAttribute('height', Math.round(hAttr * scale) + 'px');
@@ -274,8 +293,10 @@ document.getElementById('applyPasteBtn').addEventListener('click', () => {
   document.getElementById('svgPasteBox').style.display = 'none';
 });
 
+// Renders input image and builds a continuous anti-aliased scalar field (grayField)
+// for Sub-Pixel Bilinear Marching Squares
 function renderSourceToMask() {
-  const w = maskCanvas.width, h = maskCanvas.height;
+  const w = MASK_RES, h = MASK_RES;
   const invert = document.getElementById('invertImg').checked;
   const flip = document.getElementById('flipImg').checked;
   const zoom = parseFloat(document.getElementById('imgZoom').value) / 100;
@@ -284,12 +305,14 @@ function renderSourceToMask() {
   const wallScale = parseFloat(document.getElementById('wallScale').value);
   const bridgeMm = parseFloat(document.getElementById('bridgeWidth').value);
   const smoothIters = parseInt(document.getElementById('smoothIters').value, 10);
+  const gridRes = parseInt(document.getElementById('gridRes').value, 10);
 
   document.getElementById('valZoom').textContent = Math.round(zoom * 100) + '%';
   document.getElementById('valOffX').textContent = offX;
   document.getElementById('valOffY').textContent = offY;
   document.getElementById('valBridge').textContent = bridgeMm.toFixed(1);
   document.getElementById('valSmooth').textContent = smoothIters;
+  document.getElementById('valRes').textContent = gridRes;
 
   ctx.save();
   ctx.fillStyle = '#ffffff';
@@ -304,6 +327,8 @@ function renderSourceToMask() {
   ctx.translate(-w / 2, -h / 2);
 
   if (uploadedImg) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     const imgW = uploadedImg.naturalWidth || uploadedImg.width || 1024;
     const imgH = uploadedImg.naturalHeight || uploadedImg.height || 1024;
     const scale = Math.min(w / imgW, h / imgH) * 0.90;
@@ -335,22 +360,47 @@ function renderSourceToMask() {
   }
   ctx.restore();
 
+  // Extract raw luminance and perform a 3x3 Gaussian filter so even binary JPEGs/PNGs
+  // gain a smooth continuous sub-pixel gradient at their edges
   const imgData = ctx.getImageData(0, 0, w, h);
   const d = imgData.data;
-  for (let i = 0; i < d.length; i += 4) {
-    let lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
-    if (invert) lum = 255 - lum;
-    const bin = lum < 140 ? 0 : 255;
-    d[i] = d[i+1] = d[i+2] = bin;
-    d[i+3] = 255;
+  const rawField = new Float32Array(w * h);
+
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    const alpha = d[i + 3] / 255.0;
+    // Blend transparent pixels onto white background
+    const r = d[i] * alpha + 255 * (1 - alpha);
+    const g = d[i + 1] * alpha + 255 * (1 - alpha);
+    const b = d[i + 2] * alpha + 255 * (1 - alpha);
+    let lum = (r * 0.299 + g * 0.587 + b * 0.114) / 255.0;
+    if (invert) lum = 1.0 - lum;
+    // Value > 0.5 means DARK (shadow caster), Value < 0.5 means LIGHT (open air)
+    rawField[p] = 1.0 - lum;
+  }
+
+  // 3x3 Sub-pixel smoothing kernel to guarantee continuous iso-surface gradients
+  for (let y = 1; y < h - 1; y++) {
+    const row = y * w;
+    for (let x = 1; x < w - 1; x++) {
+      const idx = row + x;
+      grayField[idx] =
+        rawField[idx] * 0.25 +
+        (rawField[idx - 1] + rawField[idx + 1] + rawField[idx - w] + rawField[idx + w]) * 0.125 +
+        (rawField[idx - w - 1] + rawField[idx - w + 1] + rawField[idx + w - 1] + rawField[idx + w + 1]) * 0.0625;
+    }
+  }
+
+  // Write clean target silhouette to targetTexCanvas for accuracy verification
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    const v = Math.round((1.0 - grayField[p]) * 255);
+    d[i] = d[i + 1] = d[i + 2] = v;
+    d[i + 3] = 255;
   }
   ctx.putImageData(imgData, 0, 0);
-  maskData = ctx.getImageData(0, 0, w, h);
+  targetTexCtx.putImageData(imgData, 0, 0);
+  if (targetWallTexture) targetWallTexture.needsUpdate = true;
 
-  // Copy clean silhouette to ray-tracing texture canvas before drawing red UI overlay
-  rayCtx.putImageData(maskData, 0, 0);
-  if (wallRayTexture) wallRayTexture.needsUpdate = true;
-
+  // Draw red physical box footprint indicator on the mini preview canvas
   const W = parseFloat(document.getElementById('boxW').value);
   const H = parseFloat(document.getElementById('boxH').value);
   const bw = (W / wallScale) * w;
@@ -360,14 +410,25 @@ function renderSourceToMask() {
   ctx.strokeRect((w - bw) / 2, (h - bh) / 2, bw, bh);
 }
 
-function isWallPointDark(Xw, Yw, wallScale) {
-  if (!maskData) return false;
+// Bilinear sub-pixel sampling of the continuous shadow density field [0.0 .. 1.0]
+function sampleWallShadowDensityBilinear(Xw, Yw, wallScale) {
   const u = (Xw / wallScale) + 0.5;
   const v = 0.5 - (Yw / wallScale);
-  if (u < 0 || u >= 1 || v < 0 || v >= 1) return false;
-  const px = Math.floor(u * maskCanvas.width);
-  const py = Math.floor(v * maskCanvas.height);
-  return maskData.data[(py * maskCanvas.width + px) * 4] < 128;
+  if (u <= 0 || u >= 1 || v <= 0 || v >= 1) return 0.0;
+
+  const fx = u * (MASK_RES - 1);
+  const fy = v * (MASK_RES - 1);
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  const x1 = Math.min(x0 + 1, MASK_RES - 1);
+  const y1 = Math.min(y0 + 1, MASK_RES - 1);
+  const dx = fx - x0, dy = fy - y0;
+
+  const v00 = grayField[y0 * MASK_RES + x0];
+  const v10 = grayField[y0 * MASK_RES + x1];
+  const v01 = grayField[y1 * MASK_RES + x0];
+  const v11 = grayField[y1 * MASK_RES + x1];
+
+  return (v00 * (1 - dx) + v10 * dx) * (1 - dy) + (v01 * (1 - dx) + v11 * dx) * dy;
 }
 
 document.getElementById('loadDemoBtn').addEventListener('click', () => {
@@ -389,69 +450,106 @@ document.getElementById('resetAlignBtn').addEventListener('click', () => {
 });
 
 // ============================================================================
-// STAGE 1: TOPOLOGICAL CONNECTED-LOOP CONTOUR TRACER & SPLINE SMOOTHER
-// Traces exact closed vector loops (Outer Boundary + Inner Holes), then applies
-// Taubin/Laplacian Spline Smoothing so curves are 100% smooth with ZERO stair-steps!
+// STAGE 1: SUB-PIXEL MARCHING SQUARES ISO-CONTOUR EXTRACTOR + RDP + TAUBIN
 // ============================================================================
 
-function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
+// Ramer-Douglas-Peucker (RDP) Polyline Simplification (removes collinear jitter while preserving corners)
+function simplifyClosedLoopRDP(pts, epsilon) {
+  if (pts.length < 8) return pts;
+
+  function rdpSegment(arr, eps) {
+    if (arr.length <= 2) return arr;
+    let maxDist = 0, index = 0;
+    const start = arr[0], end = arr[arr.length - 1];
+    const dx = end.x - start.x, dz = end.z - start.z;
+    const lenSq = dx * dx + dz * dz;
+
+    for (let i = 1; i < arr.length - 1; i++) {
+      let distSq;
+      if (lenSq < 1e-10) {
+        distSq = (arr[i].x - start.x) ** 2 + (arr[i].z - start.z) ** 2;
+      } else {
+        const t = Math.max(0, Math.min(1, ((arr[i].x - start.x) * dx + (arr[i].z - start.z) * dz) / lenSq));
+        const projX = start.x + t * dx, projZ = start.z + t * dz;
+        distSq = (arr[i].x - projX) ** 2 + (arr[i].z - projZ) ** 2;
+      }
+      if (distSq > maxDist) {
+        maxDist = distSq;
+        index = i;
+      }
+    }
+    if (Math.sqrt(maxDist) > eps) {
+      const left = rdpSegment(arr.slice(0, index + 1), eps);
+      const right = rdpSegment(arr.slice(index), eps);
+      return left.slice(0, -1).concat(right);
+    }
+    return [start, end];
+  }
+
+  // Split closed loop at two farthest points, simplify both halves, and rejoin
+  const half = Math.floor(pts.length / 2);
+  const firstHalf = rdpSegment(pts.slice(0, half + 1), epsilon);
+  const secondHalf = rdpSegment(pts.slice(half).concat([pts[0]]), epsilon);
+  return firstHalf.slice(0, -1).concat(secondHalf.slice(0, -1));
+}
+
+function traceSubPixelWallShapes(params, cols = 380, rows = 280) {
   const { W, H, ZL, S, islandMode, bridgeMm, smoothIters } = params;
-  const zMax = ZL * 0.90;
+  const zMax = ZL * 0.92;
+  const baseRimMm = 3.0;
   bridgedCountTotal = 0;
 
   const walls = {
-    top:    { len: W },
-    bottom: { len: W },
-    left:   { len: H },
-    right:  { len: H }
+    top:    { len: W, bandIdx: 0 },
+    bottom: { len: W, bandIdx: 1 },
+    left:   { len: H, bandIdx: 2 },
+    right:  { len: H, bandIdx: 3 }
   };
 
   const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
 
+  // Clear GPU physical wall texture canvas
+  wallPackCtx.fillStyle = '#000000';
+  wallPackCtx.fillRect(0, 0, WALL_TEX_W, WALL_TEX_H);
+
+  let matchingPixels = 0;
+  let totalEvaluatedPixels = 0;
+
   for (const [key, wObj] of Object.entries(walls)) {
     const L = wObj.len;
-    // Pad grid by 1 empty border cell on top/left/right so contours always close cleanly
-    const grid = Array.from({ length: cols + 2 }, () => new Uint8Array(rows + 2));
+    // Continuous scalar field [0..1] on vertex grid (cols+3) x (rows+3)
+    const field = Array.from({ length: cols + 3 }, () => new Float32Array(rows + 3));
+    const grid  = Array.from({ length: cols + 3 }, () => new Uint8Array(rows + 3));
 
-    for (let c = 1; c <= cols; c++) {
-      const u = ((c - 0.5) / cols) - 0.5;
-      for (let r = 1; r <= rows; r++) {
-        const zBox = ((r - 0.5) / rows) * zMax;
-        // Solid 3.2mm structural base rim at bottom of wall (r >= 1)
-        if (zBox <= 3.2) {
+    for (let c = 1; c <= cols + 1; c++) {
+      const u = ((c - 1) / cols) - 0.5; // Exact [-0.5 .. +0.5] across inner wall width L
+      for (let r = 1; r <= rows + 1; r++) {
+        const zBox = ((r - 1) / rows) * zMax;
+        if (zBox <= baseRimMm) {
+          field[c][r] = 1.0;
           grid[c][r] = 1;
           continue;
         }
         const t = 1.0 - (zBox / ZL);
-        if (t <= 0.05) continue;
+        if (t <= 0.04) continue;
 
+        // Exact perspective projection from Point Light (0, 0, ZL) through Inner Wall Plane
         let Xw = 0, Yw = 0;
         if (key === 'top')    { Xw = (u * W) / t; Yw = ( 0.5 * H) / t; }
         if (key === 'bottom') { Xw = (u * W) / t; Yw = (-0.5 * H) / t; }
         if (key === 'right')  { Xw = ( 0.5 * W) / t; Yw = (u * H) / t; }
         if (key === 'left')   { Xw = (-0.5 * W) / t; Yw = (u * H) / t; }
 
-        if (isWallPointDark(Xw, Yw, S)) {
-          grid[c][r] = 1;
-        }
+        const val = sampleWallShadowDensityBilinear(Xw, Yw, S);
+        field[c][r] = val;
+        if (val >= 0.5) grid[c][r] = 1;
       }
     }
 
-    // Despeckle tiny 1-pixel noise before tracing
-    for (let pass = 0; pass < 2; pass++) {
-      for (let c = 1; c <= cols; c++) {
-        for (let r = 3; r <= rows; r++) {
-          const n = grid[c-1][r] + grid[c+1][r] + grid[c][r-1] + grid[c][r+1];
-          if (grid[c][r] === 1 && n <= 1) grid[c][r] = 0;
-          else if (grid[c][r] === 0 && n >= 3) grid[c][r] = 1;
-        }
-      }
-    }
-
-    // Flood-Fill from base row (r = 1) to guarantee 1 single connected outer shell per wall
-    const labels = Array.from({ length: cols + 2 }, () => new Int32Array(rows + 2));
+    // Connected-Component Flood Fill from structural base rim (r = 1)
+    const labels = Array.from({ length: cols + 3 }, () => new Int32Array(rows + 3));
     const queue = [];
-    for (let c = 1; c <= cols; c++) {
+    for (let c = 1; c <= cols + 1; c++) {
       if (grid[c][1] === 1) {
         labels[c][1] = 1;
         queue.push([c, 1]);
@@ -462,7 +560,7 @@ function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
       const [cx, cy] = queue[head++];
       for (const [dx, dy] of dirs) {
         const nx = cx + dx, ny = cy + dy;
-        if (nx >= 1 && nx <= cols && ny >= 1 && ny <= rows) {
+        if (nx >= 1 && nx <= cols + 1 && ny >= 1 && ny <= rows + 1) {
           if (grid[nx][ny] === 1 && labels[nx][ny] === 0) {
             labels[nx][ny] = 1;
             queue.push([nx, ny]);
@@ -471,10 +569,10 @@ function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
       }
     }
 
-    // Bridge or Remove Floating Islands (e.g., Crescent Moon)
+    // Handle Floating Islands (Auto-Bridge, Keep, or Remove)
     let nextLabel = 2;
-    for (let c = 1; c <= cols; c++) {
-      for (let r = 2; r <= rows; r++) {
+    for (let c = 1; c <= cols + 1; c++) {
+      for (let r = 2; r <= rows + 1; r++) {
         if (grid[c][r] === 1 && labels[c][r] === 0) {
           const comp = [];
           const q2 = [[c, r]];
@@ -485,7 +583,7 @@ function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
             comp.push([ix, iy]);
             for (const [dx, dy] of dirs) {
               const nx = ix + dx, ny = iy + dy;
-              if (nx >= 1 && nx <= cols && ny >= 1 && ny <= rows) {
+              if (nx >= 1 && nx <= cols + 1 && ny >= 1 && ny <= rows + 1) {
                 if (grid[nx][ny] === 1 && labels[nx][ny] === 0) {
                   labels[nx][ny] = nextLabel;
                   q2.push([nx, ny]);
@@ -495,19 +593,22 @@ function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
           }
           nextLabel++;
 
-          if (comp.length < 10 || islandMode === 'remove') {
-            for (const [ix, iy] of comp) grid[ix][iy] = 0;
-          } else {
+          if (comp.length < 8 || islandMode === 'remove') {
+            for (const [ix, iy] of comp) {
+              grid[ix][iy] = 0;
+              field[ix][iy] = 0.0;
+            }
+          } else if (islandMode === 'bridge') {
             bridgedCountTotal++;
             let bestDist = Infinity;
             let bestStart = comp[0], bestEnd = [comp[0][0], 1];
-            const step = Math.max(1, Math.floor(comp.length / 25));
+            const step = Math.max(1, Math.floor(comp.length / 30));
             for (let i = 0; i < comp.length; i += step) {
               const [ix, iy] = comp[i];
-              for (let gc = 1; gc <= cols; gc += 2) {
+              for (let gc = 1; gc <= cols + 1; gc += 2) {
                 for (let gr = 1; gr <= iy; gr += 2) {
                   if (labels[gc][gr] === 1) {
-                    const d2 = (ix - gc) * (ix - gc) + (iy - gr) * (iy - gr);
+                    const d2 = (ix - gc) ** 2 + (iy - gr) ** 2;
                     if (d2 < bestDist) {
                       bestDist = d2;
                       bestStart = [ix, iy];
@@ -518,21 +619,30 @@ function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
               }
             }
 
-            const halfBrushC = Math.max(1, Math.ceil((bridgeMm / (L / cols)) * 0.55));
-            const halfBrushR = Math.max(1, Math.ceil((bridgeMm / (zMax / rows)) * 0.55));
+            const radiusC = Math.max(1.2, (bridgeMm / (L / cols)) * 0.55);
+            const radiusR = Math.max(1.2, (bridgeMm / (zMax / rows)) * 0.55);
             const [x0, y0] = bestStart;
             const [x1, y1] = bestEnd;
-            const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+            const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1) * 2;
 
+            const padC = Math.ceil(radiusC + 1);
+            const padR = Math.ceil(radiusR + 1);
             for (let s = 0; s <= steps; s++) {
-              const bx = Math.round(x0 + (x1 - x0) * (s / steps));
-              const by = Math.round(y0 + (y1 - y0) * (s / steps));
-              for (let dc = -halfBrushC; dc <= halfBrushC; dc++) {
-                for (let dr = -halfBrushR; dr <= halfBrushR; dr++) {
-                  const nx = bx + dc, ny = by + dr;
-                  if (nx >= 1 && nx <= cols && ny >= 1 && ny <= rows) {
-                    grid[nx][ny] = 1;
-                    labels[nx][ny] = 1;
+              const bx = x0 + (x1 - x0) * (s / steps);
+              const by = y0 + (y1 - y0) * (s / steps);
+              for (let dc = -padC; dc <= padC; dc++) {
+                for (let dr = -padR; dr <= padR; dr++) {
+                  const nx = Math.round(bx + dc), ny = Math.round(by + dr);
+                  if (nx >= 1 && nx <= cols + 1 && ny >= 1 && ny <= rows + 1) {
+                    const normDist = Math.hypot((nx - bx) / radiusC, (ny - by) / radiusR);
+                    if (normDist <= 1.3) {
+                      const smoothVal = Math.max(0, Math.min(1, 1.0 - (normDist - 0.5) * 0.8));
+                      if (smoothVal > field[nx][ny]) field[nx][ny] = smoothVal;
+                      if (field[nx][ny] >= 0.5) {
+                        grid[nx][ny] = 1;
+                        labels[nx][ny] = 1;
+                      }
+                    }
                   }
                 }
               }
@@ -543,95 +653,156 @@ function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
       }
     }
 
-    // Extract Directed Boundary Half-Edges between solid (1) and empty (0) cells
-    // Vertex coordinates (c, r) in [0..cols+1, 0..rows+1]
-    // Directed edge keeps solid cell on its LEFT (Counter-Clockwise outer loop, Clockwise inner holes)
+    // Pack this physical wall's occupancy field into the GPU Ray-Tracing Texture
+    const bandH = WALL_TEX_H / 4;
+    const bandY0 = wObj.bandIdx * bandH;
+    const bandImg = wallPackCtx.createImageData(WALL_TEX_W, bandH);
+    const bData = bandImg.data;
+    for (let py = 0; py < bandH; py++) {
+      const rIdx = Math.min(rows + 1, Math.max(1, Math.round(1 + (py / (bandH - 1)) * rows)));
+      for (let px = 0; px < WALL_TEX_W; px++) {
+        const cIdx = Math.min(cols + 1, Math.max(1, Math.round(1 + (px / (WALL_TEX_W - 1)) * cols)));
+        const isSolid = grid[cIdx][rIdx] === 1;
+        const pOff = (py * WALL_TEX_W + px) * 4;
+        bData[pOff] = bData[pOff + 1] = bData[pOff + 2] = isSolid ? 255 : 0;
+        bData[pOff + 3] = 255;
+
+        // Measure accuracy against target image
+        const u = ((cIdx - 1) / cols) - 0.5;
+        const zBox = ((rIdx - 1) / rows) * zMax;
+        if (zBox > baseRimMm) {
+          const t = 1.0 - (zBox / ZL);
+          let Xw = 0, Yw = 0;
+          if (key === 'top')    { Xw = (u * W) / t; Yw = ( 0.5 * H) / t; }
+          if (key === 'bottom') { Xw = (u * W) / t; Yw = (-0.5 * H) / t; }
+          if (key === 'right')  { Xw = ( 0.5 * W) / t; Yw = (u * H) / t; }
+          if (key === 'left')   { Xw = (-0.5 * W) / t; Yw = (u * H) / t; }
+          if (Math.abs(Xw) <= S * 0.49 && Math.abs(Yw) <= S * 0.49) {
+            const targetDark = sampleWallShadowDensityBilinear(Xw, Yw, S) >= 0.5;
+            totalEvaluatedPixels++;
+            if (isSolid === targetDark) matchingPixels++;
+          }
+        }
+      }
+    }
+    wallPackCtx.putImageData(bandImg, 0, bandY0);
+
+    // ========================================================================
+    // SUB-PIXEL MARCHING SQUARES ISO-CONTOUR EXTRACTION (Iso-value = 0.5)
+    // Computes exact linear-interpolated edge crossings along cell boundaries
+    // ========================================================================
+    const ISO = 0.5;
     const outEdges = new Map();
-    const addDirectedEdge = (x1, y1, x2, y2) => {
-      const k1 = `${x1},${y1}`;
-      if (!outEdges.has(k1)) outEdges.set(k1, []);
-      outEdges.get(k1).push({ x: x2, y: y2, used: false });
+
+    // Canonical vertex key rounded to 1e-4 grid units so shared cell edges weld 100% water-tight
+    const ptKey = (x, y) => `${Math.round(x * 2048)},${Math.round(y * 2048)}`;
+    const addSegment = (p1, p2) => {
+      const k1 = ptKey(p1.x, p1.y);
+      const k2 = ptKey(p2.x, p2.y);
+      if (k1 === k2) return;
+      if (!outEdges.has(k1)) outEdges.set(k1, { pt: p1, edges: [] });
+      if (!outEdges.has(k2)) outEdges.set(k2, { pt: p2, edges: [] });
+      outEdges.get(k1).edges.push({ toKey: k2, used: false });
     };
 
-    for (let c = 1; c <= cols; c++) {
-      for (let r = 1; r <= rows; r++) {
-        if (grid[c][r] === 0) continue;
-        // Bottom edge: if below is 0 -> (c-1, r-1) to (c, r-1)
-        if (grid[c][r - 1] === 0) addDirectedEdge(c - 1, r - 1, c, r - 1);
-        // Right edge: if right is 0 -> (c, r-1) to (c, r)
-        if (grid[c + 1][r] === 0) addDirectedEdge(c, r - 1, c, r);
-        // Top edge: if above is 0 -> (c, r) to (c-1, r)
-        if (grid[c][r + 1] === 0) addDirectedEdge(c, r, c - 1, r);
-        // Left edge: if left is 0 -> (c-1, r) to (c-1, r-1)
-        if (grid[c - 1][r] === 0) addDirectedEdge(c - 1, r, c - 1, r - 1);
+    const interp = (v1, v2) => {
+      const denom = v2 - v1;
+      if (Math.abs(denom) < 1e-6) return 0.5;
+      return Math.max(0.0, Math.min(1.0, (ISO - v1) / denom));
+    };
+
+    for (let c = 0; c <= cols + 1; c++) {
+      for (let r = 0; r <= rows + 1; r++) {
+        // Ensure field values strictly agree with the post-bridged/post-filtered binary grid
+        const v0 = grid[c][r]         ? Math.max(ISO + 0.01, field[c][r])         : Math.min(ISO - 0.01, field[c][r]);
+        const v1 = grid[c + 1][r]     ? Math.max(ISO + 0.01, field[c + 1][r])     : Math.min(ISO - 0.01, field[c + 1][r]);
+        const v2 = grid[c + 1][r + 1] ? Math.max(ISO + 0.01, field[c + 1][r + 1]) : Math.min(ISO - 0.01, field[c + 1][r + 1]);
+        const v3 = grid[c][r + 1]     ? Math.max(ISO + 0.01, field[c][r + 1])     : Math.min(ISO - 0.01, field[c][r + 1]);
+
+        const b0 = v0 >= ISO ? 1 : 0;
+        const b1 = v1 >= ISO ? 2 : 0;
+        const b2 = v2 >= ISO ? 4 : 0;
+        const b3 = v3 >= ISO ? 8 : 0;
+        const mask = b0 | b1 | b2 | b3;
+        if (mask === 0 || mask === 15) continue;
+
+        // Interpolated points on Bottom (eB), Right (eR), Top (eT), Left (eL) edges of cell [c, r]
+        const eB = { x: c + interp(v0, v1), y: r };
+        const eR = { x: c + 1,              y: r + interp(v1, v2) };
+        const eT = { x: c + interp(v3, v2), y: r + 1 };
+        const eL = { x: c,                  y: r + interp(v0, v3) };
+
+        // Directed segments keep SOLID region (v >= ISO) on the LEFT (CCW Outer, CW Holes)
+        switch (mask) {
+          case 1:  addSegment(eB, eL); break;
+          case 2:  addSegment(eR, eB); break;
+          case 3:  addSegment(eR, eL); break;
+          case 4:  addSegment(eT, eR); break;
+          case 5:  addSegment(eB, eR); addSegment(eT, eL); break;
+          case 6:  addSegment(eT, eB); break;
+          case 7:  addSegment(eT, eL); break;
+          case 8:  addSegment(eL, eT); break;
+          case 9:  addSegment(eB, eT); break;
+          case 10: addSegment(eL, eB); addSegment(eR, eT); break;
+          case 11: addSegment(eR, eT); break;
+          case 12: addSegment(eL, eR); break;
+          case 13: addSegment(eB, eR); break;
+          case 14: addSegment(eL, eB); break;
+        }
       }
     }
 
-    // Stitch directed edges into closed topological loops
+    // Stitch sub-pixel segments into closed loops
     const rawLoops = [];
-    for (const [startKey, edgeList] of outEdges.entries()) {
-      for (const firstEdge of edgeList) {
+    for (const [startKey, node] of outEdges.entries()) {
+      for (const firstEdge of node.edges) {
         if (firstEdge.used) continue;
-        const [sx, sy] = startKey.split(',').map(Number);
-        const loop = [{ c: sx, r: sy }];
+        const loop = [node.pt];
         firstEdge.used = true;
-        let currX = firstEdge.x, currY = firstEdge.y;
+        let currKey = firstEdge.toKey;
 
-        while (!(currX === sx && currY === sy)) {
-          loop.push({ c: currX, r: currY });
-          const nextList = outEdges.get(`${currX},${currY}`);
-          if (!nextList) break;
-          let found = null;
-          for (const cand of nextList) {
-            if (!cand.used) { found = cand; break; }
+        while (currKey !== startKey) {
+          const currNode = outEdges.get(currKey);
+          if (!currNode) break;
+          loop.push(currNode.pt);
+          let nextEdge = null;
+          for (const cand of currNode.edges) {
+            if (!cand.used) { nextEdge = cand; break; }
           }
-          if (!found) break;
-          found.used = true;
-          currX = found.x;
-          currY = found.y;
+          if (!nextEdge) break;
+          nextEdge.used = true;
+          currKey = nextEdge.toKey;
         }
         if (loop.length >= 6) rawLoops.push(loop);
       }
     }
 
-    // Convert grid indices (c, r) to physical millimeter coordinates (x in [-L/2, L/2], z in [0, zMax])
-    // and apply Taubin / Laplacian Curve Smoothing while pinning base corners (z == 0 and x == +-L/2)
     const smoothLoops = [];
+    const rdpEps = Math.min(L / cols, zMax / rows) * 0.22;
+
     for (const raw of rawLoops) {
-      let pts = raw.map(p => ({
-        x: ((p.c / cols) - 0.5) * L,
-        z: (p.r / rows) * zMax,
-        pinned: (p.r === 0) || (p.r <= 2 && (p.c === 0 || p.c === cols))
-      }));
+      // Map sub-pixel grid coordinates (x in [1..cols+1], y in [1..rows+1]) to exact mm
+      let pts = raw.map(p => {
+        const xMm = Math.max(-L / 2, Math.min(L / 2, (((p.x - 1) / cols) - 0.5) * L));
+        const zMm = Math.max(0, Math.min(zMax, ((p.y - 1) / rows) * zMax));
+        const isBaseOrCorner = (zMm <= 0.15) || (zMm <= baseRimMm && Math.abs(Math.abs(xMm) - L / 2) <= 0.25);
+        return { x: xMm, z: zMm, pinned: isBaseOrCorner };
+      });
 
-      // Remove redundant colinear grid vertices along straight base edges before curve smoothing
-      const filtered = [];
-      const n0 = pts.length;
-      for (let i = 0; i < n0; i++) {
-        const prev = pts[(i - 1 + n0) % n0];
-        const curr = pts[i];
-        const next = pts[(i + 1) % n0];
-        const dx1 = curr.x - prev.x, dz1 = curr.z - prev.z;
-        const dx2 = next.x - curr.x, dz2 = next.z - curr.z;
-        const cross = Math.abs(dx1 * dz2 - dz1 * dx2);
-        if (curr.pinned || cross > 1e-4 || (i % 2 === 0)) {
-          filtered.push(curr);
-        }
-      }
-      pts = filtered;
+      // Apply Ramer-Douglas-Peucker simplification to eliminate micro-grid noise
+      pts = simplifyClosedLoopRDP(pts, rdpEps);
 
-      // Apply Taubin-style Shrink-Free Curve Smoothing passes
-      // Alternating positive (+0.45) and negative (-0.42) Laplacian weights smooths stair-steps
-      // into silky-smooth splines WITHOUT shrinking thin features like the Trishul prongs!
-      const weights = [0.45, -0.42];
+      // Apply Taubin Shrink-Free Surface Smoothing
+      const weights = [0.42, -0.40];
       for (let iter = 0; iter < smoothIters * 2; iter++) {
         const w = weights[iter % 2];
         const n = pts.length;
         const nextPts = new Array(n);
         for (let i = 0; i < n; i++) {
           const cur = pts[i];
-          if (cur.pinned || cur.z <= 0.05) {
-            nextPts[i] = { ...cur };
+          const isBase = (cur.z <= 0.15) || (cur.z <= baseRimMm && Math.abs(Math.abs(cur.x) - L / 2) <= 0.25);
+          if (cur.pinned || isBase) {
+            nextPts[i] = { ...cur, pinned: true };
             continue;
           }
           const prv = pts[(i - 1 + n) % n];
@@ -647,7 +818,6 @@ function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
         pts = nextPts;
       }
 
-      // Compute signed polygon area to classify Outer Loop (Area > 0) vs Inner Cutout Holes (Area < 0)
       let signedArea = 0;
       for (let i = 0; i < pts.length; i++) {
         const a = pts[i], b = pts[(i + 1) % pts.length];
@@ -655,21 +825,18 @@ function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
       }
       signedArea *= 0.5;
 
-      // Filter out microscopic pinhole loops (< 1.2 mm^2)
-      if (Math.abs(signedArea) >= 1.2) {
+      if (Math.abs(signedArea) >= 0.8) {
         smoothLoops.push({ pts, signedArea });
       }
     }
 
-    // Sort so the largest positive-area loop is the primary Outer Boundary, and negative loops are Holes
     const outerLoops = smoothLoops.filter(l => l.signedArea > 0).sort((a, b) => b.signedArea - a.signedArea);
     const holeLoops  = smoothLoops.filter(l => l.signedArea < 0);
 
-    // Compute corner heights at left (x = -L/2) and right (x = +L/2) for seamless corner pillar welding
-    let leftCornerZ = 3.2, rightCornerZ = 3.2;
-    for (let r = 1; r <= rows; r++) {
-      if (grid[1][r]) leftCornerZ = Math.max(leftCornerZ, (r / rows) * zMax);
-      if (grid[cols][r]) rightCornerZ = Math.max(rightCornerZ, (r / rows) * zMax);
+    let leftCornerZ = baseRimMm, rightCornerZ = baseRimMm;
+    for (let r = 1; r <= rows + 1; r++) {
+      if (grid[1][r]) leftCornerZ = Math.max(leftCornerZ, ((r - 1) / rows) * zMax);
+      if (grid[cols + 1][r]) rightCornerZ = Math.max(rightCornerZ, ((r - 1) / rows) * zMax);
     }
 
     wObj.outerLoops = outerLoops;
@@ -678,57 +845,134 @@ function traceAndSmoothWallShapes(params, cols = 280, rows = 200) {
     wObj.rightCornerZ = rightCornerZ;
   }
 
+  if (physicalWallTexture) physicalWallTexture.needsUpdate = true;
+  shadowAccuracyPct = totalEvaluatedPixels > 0 ? (matchingPixels / totalEvaluatedPixels) * 100 : 100.0;
+
   return walls;
 }
 
-// Builds a true CAD extruded solid using THREE.Shape + THREE.ExtrudeGeometry (Zero stair-step ribs!)
-function buildTrueCADWallGeometry(wObj, T) {
-  const shapes = [];
+// ============================================================================
+// STAGE 2: TRUE CONICAL / PYRAMIDAL 3D WALL EXTRUSION (ZERO PARALLAX ERROR!)
+// Every vertex on the inner box surface is extruded along the exact light ray
+// from L=(0,0,ZL) to the outer wall surface so thickness T never clips rays!
+// ============================================================================
+function buildConicalExtrudedWallGeometry(key, wObj, params) {
+  const { W, H, ZL, T } = params;
+  const positions = [];
+  const indices = [];
 
-  for (let i = 0; i < wObj.outerLoops.length; i++) {
-    const outer = wObj.outerLoops[i].pts;
-    const shape = new THREE.Shape();
-    shape.moveTo(outer[0].x, outer[0].z);
-    for (let k = 1; k < outer.length; k++) {
-      shape.lineTo(outer[k].x, outer[k].z);
+  // Maps a 2D wall contour point (uMm along wall width, zMm height) to 3D Inner & Outer vertices
+  // Inner plane is at exact box interior (W/2 or H/2).
+  // Outer plane is projected radially from Point Light (0, 0, ZL) to (W/2 + T or H/2 + T).
+  function mapWallPointTo3D(uMm, zMm, isOuter) {
+    let xIn = 0, yIn = 0;
+    let scale = 1.0;
+
+    if (key === 'top') {
+      xIn = uMm;
+      yIn = H / 2;
+      if (isOuter) scale = (H / 2 + T) / (H / 2);
+    } else if (key === 'bottom') {
+      // Flip u direction so outward normal points cleanly for consistent CCW triangle winding
+      xIn = -uMm;
+      yIn = -H / 2;
+      if (isOuter) scale = (H / 2 + T) / (H / 2);
+    } else if (key === 'right') {
+      xIn = W / 2;
+      yIn = -uMm;
+      if (isOuter) scale = (W / 2 + T) / (W / 2);
+    } else if (key === 'left') {
+      xIn = -W / 2;
+      yIn = uMm;
+      if (isOuter) scale = (W / 2 + T) / (W / 2);
     }
-    shape.closePath();
 
-    // Attach inner cutout holes to the main outer shape
-    if (i === 0) {
-      for (const hLoop of wObj.holeLoops) {
-        const hPts = hLoop.pts;
-        const holePath = new THREE.Path();
-        holePath.moveTo(hPts[0].x, hPts[0].z);
-        for (let k = 1; k < hPts.length; k++) {
-          holePath.lineTo(hPts[k].x, hPts[k].z);
-        }
-        holePath.closePath();
-        shape.holes.push(holePath);
+    if (!isOuter || zMm <= 0.25) {
+      // Keep baseplate attachment (z == 0) flat on Z = 0 while flaring X/Y to outer thickness
+      return new THREE.Vector3(xIn * scale, yIn * scale, zMm);
+    }
+
+    // Conical ray-aligned projection from Light (0, 0, ZL) through (xIn, yIn, zMm)
+    const xOut = xIn * scale;
+    const yOut = yIn * scale;
+    const zOut = Math.max(0, ZL + (zMm - ZL) * scale);
+    return new THREE.Vector3(xOut, yOut, zOut);
+  }
+
+  for (let sIdx = 0; sIdx < wObj.outerLoops.length; sIdx++) {
+    const outerPts = wObj.outerLoops[sIdx].pts;
+    const contourVec2 = outerPts.map(p => new THREE.Vector2(p.x, p.z));
+    const holesVec2 = (sIdx === 0)
+      ? wObj.holeLoops.map(h => h.pts.map(p => new THREE.Vector2(p.x, p.z)))
+      : [];
+
+    // Triangulate 2D face with holes using Three.js ShapeUtils
+    const faces = THREE.ShapeUtils.triangulateShape(contourVec2, holesVec2);
+    const allLoopLists = [contourVec2, ...holesVec2];
+    const flatPts = [];
+    for (const lst of allLoopLists) {
+      for (const pt of lst) flatPts.push(pt);
+    }
+
+    const baseVertIdx = positions.length / 3;
+    const nPts = flatPts.length;
+
+    // Push Inner vertices [0 .. nPts-1]
+    for (let i = 0; i < nPts; i++) {
+      const v = mapWallPointTo3D(flatPts[i].x, flatPts[i].y, false);
+      positions.push(v.x, v.y, v.z);
+    }
+    // Push Conical Outer vertices [nPts .. 2*nPts-1]
+    for (let i = 0; i < nPts; i++) {
+      const v = mapWallPointTo3D(flatPts[i].x, flatPts[i].y, true);
+      positions.push(v.x, v.y, v.z);
+    }
+
+    // Flip winding for bottom/right walls where local u axis was mirrored
+    const flipWinding = (key === 'bottom' || key === 'right');
+
+    // 1. Inner & Outer Cap Faces
+    for (const [a, b, c] of faces) {
+      if (!flipWinding) {
+        indices.push(baseVertIdx + a, baseVertIdx + c, baseVertIdx + b);
+        indices.push(baseVertIdx + nPts + a, baseVertIdx + nPts + b, baseVertIdx + nPts + c);
+      } else {
+        indices.push(baseVertIdx + a, baseVertIdx + b, baseVertIdx + c);
+        indices.push(baseVertIdx + nPts + a, baseVertIdx + nPts + c, baseVertIdx + nPts + b);
       }
     }
-    shapes.push(shape);
+
+    // 2. Conical Ray-Aligned Side Bevel Walls along Outer & Hole Boundaries
+    let ringOffset = 0;
+    for (const ring of allLoopLists) {
+      const rLen = ring.length;
+      for (let i = 0; i < rLen; i++) {
+        const cur = ringOffset + i;
+        const nxt = ringOffset + ((i + 1) % rLen);
+        const i0 = baseVertIdx + cur;
+        const i1 = baseVertIdx + nxt;
+        const o0 = baseVertIdx + nPts + cur;
+        const o1 = baseVertIdx + nPts + nxt;
+
+        if (!flipWinding) {
+          indices.push(i0, i1, o1);
+          indices.push(i0, o1, o0);
+        } else {
+          indices.push(i0, o1, i1);
+          indices.push(i0, o0, o1);
+        }
+      }
+      ringOffset += rLen;
+    }
   }
 
-  if (shapes.length === 0) {
-    return new THREE.BufferGeometry();
-  }
-
-  // Extrude along Z by thickness T, then rotate so wall stands vertically on X-Z plane with thickness along Y
-  const extrudeGeo = new THREE.ExtrudeGeometry(shapes, {
-    depth: T,
-    bevelEnabled: false,
-    curveSegments: 1
-  });
-
-  // Transform from (x, y=zWall, z=thickness) -> (x, y=thickness centered at 0, z=zWall)
-  extrudeGeo.translate(0, 0, -T / 2);
-  extrudeGeo.rotateX(Math.PI / 2);
-  extrudeGeo.computeVertexNormals();
-  return extrudeGeo;
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setIndex(indices);
+  geom.computeVertexNormals();
+  return geom;
 }
 
-// Builds a unified Backplate + Hollow Center Wire Stalk
 function buildUnifiedBackplateAndStalkGeometry(W, H, T, outerR, innerR, stalkLen) {
   const shape = new THREE.Shape();
   const hw = W / 2 + T, hh = H / 2 + T;
@@ -743,7 +987,8 @@ function buildUnifiedBackplateAndStalkGeometry(W, H, T, outerR, innerR, stalkLen
     hole.absarc(0, 0, innerR, 0, Math.PI * 2, true);
     shape.holes.push(hole);
   }
-  const backGeo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 36 });
+  const backGeo = new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 48 });
+  backGeo.translate(0, 0, -T); // Sit flush under z = 0 so walls start cleanly at z = 0
 
   const stalkShape = new THREE.Shape();
   stalkShape.absarc(0, 0, outerR, 0, Math.PI * 2, false);
@@ -752,20 +997,21 @@ function buildUnifiedBackplateAndStalkGeometry(W, H, T, outerR, innerR, stalkLen
     hole.absarc(0, 0, innerR, 0, Math.PI * 2, true);
     stalkShape.holes.push(hole);
   }
-  const stalkGeo = new THREE.ExtrudeGeometry(stalkShape, { depth: stalkLen, bevelEnabled: false, curveSegments: 36 });
+  const stalkGeo = new THREE.ExtrudeGeometry(stalkShape, { depth: stalkLen, bevelEnabled: false, curveSegments: 48 });
 
   return { backGeo, stalkGeo };
 }
 
 // ============================================================================
-// STAGE 2: THREE.JS SCENE & REAL-TIME GPU RAY-TRACED SHADOW SIMULATOR
+// STAGE 3: THREE.JS SCENE & TRUE PHYSICAL WALL GPU RAY-CASTER
+// Ray-casts from Point Light (0,0,ZL) through the 4 physical 3D walls onto the wall!
 // ============================================================================
 const container = document.getElementById('viewport');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0b0e);
 
 const camera = new THREE.PerspectiveCamera(45, 1, 1, 3500);
-camera.position.set(0, -160, 520);
+camera.position.set(0, -165, 520);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -774,19 +1020,24 @@ container.appendChild(renderer.domElement);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-wallRayTexture = new THREE.CanvasTexture(rayMaskCanvas);
-wallRayTexture.minFilter = THREE.LinearFilter;
-wallRayTexture.magFilter = THREE.LinearFilter;
+targetWallTexture = new THREE.CanvasTexture(targetTexCanvas);
+targetWallTexture.minFilter = THREE.LinearFilter;
+targetWallTexture.magFilter = THREE.LinearFilter;
 
-// Custom GPU Ray-Tracing Shader on the Wall Plane:
-// Computes exact perspective ray intersection from Point Light (0, 0, ZL) through the 3D box walls
-// with realistic inverse-square falloff and penumbra softness!
+physicalWallTexture = new THREE.CanvasTexture(wallPackCanvas);
+physicalWallTexture.minFilter = THREE.LinearFilter;
+physicalWallTexture.magFilter = THREE.LinearFilter;
+physicalWallTexture.flipY = false;
+
 const wallShaderMat = new THREE.ShaderMaterial({
   uniforms: {
     lightPos: { value: new THREE.Vector3(0, 0, 75) },
     wallScale: { value: 380.0 },
     boxSize: { value: new THREE.Vector2(90, 120) },
-    silhouetteTex: { value: wallRayTexture }
+    zMax: { value: 69.0 },
+    showDiff: { value: 0.0 },
+    targetTex: { value: targetWallTexture },
+    wallPackTex: { value: physicalWallTexture }
   },
   vertexShader: `
     varying vec3 vWorldPos;
@@ -800,45 +1051,95 @@ const wallShaderMat = new THREE.ShaderMaterial({
     uniform vec3 lightPos;
     uniform float wallScale;
     uniform vec2 boxSize;
-    uniform sampler2D silhouetteTex;
+    uniform float zMax;
+    uniform float showDiff;
+    uniform sampler2D targetTex;
+    uniform sampler2D wallPackTex;
     varying vec3 vWorldPos;
 
-    // 9-tap Gaussian-weighted ray-traced penumbra sampling for realistic LED filament size
-    float sampleRayShadow(vec2 wallXY) {
-      vec2 uv = (wallXY / wallScale) + vec2(0.5);
-      if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 1.0;
+    // Traces a 3D light ray from (0, 0, ZL) to wall point (wallXY.x, wallXY.y, 0)
+    // and checks exact intersection with the 4 physical 3D box walls!
+    float tracePhysicalWallOcclusion(vec2 wallXY) {
+      float halfW = boxSize.x * 0.5;
+      float halfH = boxSize.y * 0.5;
 
-      // Inside the physical box footprint is occluded by the backplate
-      if (abs(wallXY.x) < boxSize.x * 0.5 && abs(wallXY.y) < boxSize.y * 0.5) {
+      // Inside box footprint is occluded by the solid baseplate
+      if (abs(wallXY.x) <= halfW && abs(wallXY.y) <= halfH) {
         return 0.0;
       }
 
-      float px = 0.65 / 1024.0;
-      float lit = 0.0;
-      lit += texture2D(silhouetteTex, uv).r * 0.25;
-      lit += texture2D(silhouetteTex, uv + vec2( px,  0.0)).r * 0.125;
-      lit += texture2D(silhouetteTex, uv + vec2(-px,  0.0)).r * 0.125;
-      lit += texture2D(silhouetteTex, uv + vec2( 0.0,  px)).r * 0.125;
-      lit += texture2D(silhouetteTex, uv + vec2( 0.0, -px)).r * 0.125;
-      lit += texture2D(silhouetteTex, uv + vec2( px,  px)).r * 0.0625;
-      lit += texture2D(silhouetteTex, uv + vec2(-px,  px)).r * 0.0625;
-      lit += texture2D(silhouetteTex, uv + vec2( px, -px)).r * 0.0625;
-      lit += texture2D(silhouetteTex, uv + vec2(-px, -px)).r * 0.0625;
+      // Compute ray parameter s in (0..1) where ray hits first box wall plane
+      float sx = (abs(wallXY.x) > 1e-4) ? (halfW / abs(wallXY.x)) : 999.0;
+      float sy = (abs(wallXY.y) > 1e-4) ? (halfH / abs(wallXY.y)) : 999.0;
+      float sHit = min(sx, sy);
+
+      // If ray never intersects the box planes, it is unoccluded light
+      if (sHit >= 1.0) return 1.0;
+
+      // Height zHit on the box wall where the ray crosses
+      float zHit = lightPos.z * (1.0 - sHit);
+      if (zHit > zMax) return 1.0; // Passes above the top of the box walls
+
+      float vNorm = clamp(zHit / zMax, 0.0, 1.0);
+      float uNorm = 0.5;
+      float bandIdx = 0.0;
+
+      if (sy < sx) {
+        // Hit Top or Bottom Wall (width = W)
+        float xHit = wallXY.x * sHit;
+        uNorm = clamp((xHit / boxSize.x) + 0.5, 0.0, 1.0);
+        bandIdx = (wallXY.y >= 0.0) ? 0.0 : 1.0;
+      } else {
+        // Hit Left or Right Wall (width = H)
+        float yHit = wallXY.y * sHit;
+        uNorm = clamp((yHit / boxSize.y) + 0.5, 0.0, 1.0);
+        bandIdx = (wallXY.x >= 0.0) ? 3.0 : 2.0;
+      }
+
+      // Sample packed physical wall texture (bandIdx in 0..3)
+      float texV = (bandIdx + clamp(vNorm, 0.004, 0.996)) * 0.25;
+      float isWallSolid = texture2D(wallPackTex, vec2(uNorm, texV)).r;
+      return 1.0 - isWallSolid; // 1.0 = lit, 0.0 = shadowed by 3D wall
+    }
+
+    float samplePhysicalPenumbra(vec2 wallXY) {
+      float r = 0.85; // Soft penumbra radius (mm) on wall from finite LED emitter
+      float lit = tracePhysicalWallOcclusion(wallXY) * 0.28;
+      lit += tracePhysicalWallOcclusion(wallXY + vec2( r,  0.0)) * 0.12;
+      lit += tracePhysicalWallOcclusion(wallXY + vec2(-r,  0.0)) * 0.12;
+      lit += tracePhysicalWallOcclusion(wallXY + vec2( 0.0,  r)) * 0.12;
+      lit += tracePhysicalWallOcclusion(wallXY + vec2( 0.0, -r)) * 0.12;
+      lit += tracePhysicalWallOcclusion(wallXY + vec2( r,  r)) * 0.06;
+      lit += tracePhysicalWallOcclusion(wallXY + vec2(-r,  r)) * 0.06;
+      lit += tracePhysicalWallOcclusion(wallXY + vec2( r, -r)) * 0.06;
+      lit += tracePhysicalWallOcclusion(wallXY + vec2(-r, -r)) * 0.06;
       return lit;
     }
 
     void main() {
       float dist = length(vWorldPos - lightPos);
-      // Realistic warm golden radial illumination falloff
       float radialFalloff = clamp(1.15 - (dist / (wallScale * 1.15)), 0.08, 1.0);
       radialFalloff = pow(radialFalloff, 1.35);
 
-      float isLit = sampleRayShadow(vWorldPos.xy);
+      float physicalLit = samplePhysicalPenumbra(vWorldPos.xy);
 
       vec3 litColor = vec3(1.0, 0.78, 0.36) * radialFalloff * 1.18;
-      vec3 shadowColor = vec3(0.11, 0.08, 0.05) * radialFalloff;
+      vec3 shadowColor = vec3(0.10, 0.07, 0.05) * radialFalloff;
+      vec3 finalCol = mix(shadowColor, litColor, physicalLit);
 
-      vec3 finalCol = mix(shadowColor, litColor, isLit);
+      // Optional Live Accuracy Diff Overlay (Highlights structural bridges or cutoffs in Cyan/Magenta)
+      if (showDiff > 0.5) {
+        vec2 uv = (vWorldPos.xy / wallScale) + vec2(0.5);
+        if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+          float targetLit = texture2D(targetTex, uv).r;
+          float diff = abs(physicalLit - targetLit);
+          if (diff > 0.35) {
+            vec3 errCol = (physicalLit < targetLit) ? vec3(0.0, 0.9, 1.0) : vec3(1.0, 0.15, 0.45);
+            finalCol = mix(finalCol, errCol, 0.75);
+          }
+        }
+      }
+
       gl_FragColor = vec4(finalCol, 1.0);
     }
   `
@@ -848,8 +1149,7 @@ const wallGeo = new THREE.PlaneGeometry(1400, 1400);
 const wallMesh = new THREE.Mesh(wallGeo, wallShaderMat);
 scene.add(wallMesh);
 
-// Lighting for the 3D CAD Box itself
-scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+scene.add(new THREE.AmbientLight(0xffffff, 0.38));
 const dirLight1 = new THREE.DirectionalLight(0xffe0b2, 0.85);
 dirLight1.position.set(120, -220, 380);
 scene.add(dirLight1);
@@ -878,21 +1178,24 @@ function getParams() {
     islandMode: document.getElementById('islandMode').value,
     bridgeMm: parseFloat(document.getElementById('bridgeWidth').value),
     smoothIters: parseInt(document.getElementById('smoothIters').value, 10),
+    gridRes: parseInt(document.getElementById('gridRes').value, 10),
     includeTabs: document.getElementById('includeTabs').checked,
-    showRays: document.getElementById('showRays').checked
+    showRays: document.getElementById('showRays').checked,
+    showDiff: document.getElementById('showDiff').checked
   };
 }
 
-function buildCompleteCADBox(p, cols = 280, rows = 200) {
+function buildCompleteCADBox(p, cols, rows) {
   const group = new THREE.Group();
   const boxMat = new THREE.MeshStandardMaterial({
     color: 0x202228,
-    roughness: 0.45,
-    metalness: 0.15
+    roughness: 0.42,
+    metalness: 0.15,
+    side: THREE.DoubleSide
   });
-  const edgeMat = new THREE.LineBasicMaterial({ color: 0x444854, transparent: true, opacity: 0.45 });
+  const edgeMat = new THREE.LineBasicMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.32 });
 
-  const walls = traceAndSmoothWallShapes(p, cols, rows);
+  const walls = traceSubPixelWallShapes(p, cols, rows);
   const physicalPoleLen = Math.max(10, p.ZL - p.ledOffset);
 
   // 1. Backplate & Hollow Wire Stalk
@@ -907,30 +1210,18 @@ function buildCompleteCADBox(p, cols = 280, rows = 200) {
   stalkMesh.userData.exportStl = true;
   group.add(stalkMesh);
 
-  // 2. The 4 Pure-Vector Extruded CAD Walls
+  // 2. The 4 Conical Ray-Aligned 3D Walls
   for (const [key, wObj] of Object.entries(walls)) {
-    const geom = buildTrueCADWallGeometry(wObj, p.T);
-    if (key === 'top') {
-      geom.translate(0, p.H / 2 + p.T / 2, 0);
-    } else if (key === 'bottom') {
-      geom.translate(0, -p.H / 2 - p.T / 2, 0);
-    } else if (key === 'right') {
-      geom.rotateZ(Math.PI / 2);
-      geom.translate(p.W / 2 + p.T / 2, 0, 0);
-    } else if (key === 'left') {
-      geom.rotateZ(Math.PI / 2);
-      geom.translate(-p.W / 2 - p.T / 2, 0, 0);
-    }
+    const geom = buildConicalExtrudedWallGeometry(key, wObj, p);
     const mesh = new THREE.Mesh(geom, boxMat);
     mesh.userData.exportStl = true;
     group.add(mesh);
 
-    // Subtle CAD feature edge highlight so user can inspect the smooth bevels in 3D view
-    const edges = new THREE.EdgesGeometry(geom, 28);
+    const edges = new THREE.EdgesGeometry(geom, 24);
     group.add(new THREE.LineSegments(edges, edgeMat));
   }
 
-  // 3. 4 Welded Corner Pillars (Eliminates any gap between the 4 walls at the corners!)
+  // 3. 4 Conical Corner Sealing Pillars (Seals the outer flared corners cleanly)
   const cornerDefs = [
     { x: -p.W/2 - p.T/2, y:  p.H/2 + p.T/2, zH: Math.max(walls.top.leftCornerZ, walls.left.rightCornerZ) },
     { x:  p.W/2 + p.T/2, y:  p.H/2 + p.T/2, zH: Math.max(walls.top.rightCornerZ, walls.right.rightCornerZ) },
@@ -939,16 +1230,16 @@ function buildCompleteCADBox(p, cols = 280, rows = 200) {
   ];
 
   for (const cd of cornerDefs) {
-    const cGeo = new THREE.BoxGeometry(p.T * 1.04, p.T * 1.04, cd.zH);
+    const cGeo = new THREE.BoxGeometry(p.T * 1.05, p.T * 1.05, cd.zH);
     cGeo.translate(cd.x, cd.y, cd.zH / 2);
     const cMesh = new THREE.Mesh(cGeo, boxMat);
     cMesh.userData.exportStl = true;
     group.add(cMesh);
   }
 
-  // 4. Glowing Point-Light Bulb & Optional Ray-Cone Guide
+  // 4. Point-Light Bulb & Ray-Cone Guide
   const bulb = new THREE.Mesh(
-    new THREE.SphereGeometry(Math.max(3.0, p.poleOD * 0.45), 20, 20),
+    new THREE.SphereGeometry(Math.max(2.8, p.poleOD * 0.42), 20, 20),
     new THREE.MeshBasicMaterial({ color: 0xffe57f })
   );
   bulb.position.set(0, 0, p.ZL);
@@ -989,21 +1280,25 @@ function rebuildShadowBox() {
   wallShaderMat.uniforms.lightPos.value.set(0, 0, p.ZL);
   wallShaderMat.uniforms.wallScale.value = p.S;
   wallShaderMat.uniforms.boxSize.value.set(p.W, p.H);
+  wallShaderMat.uniforms.zMax.value = p.ZL * 0.92;
+  wallShaderMat.uniforms.showDiff.value = p.showDiff ? 1.0 : 0.0;
 
   scene.remove(boxGroup);
   disposeGroup(boxGroup);
-  const built = buildCompleteCADBox(p, 260, 190);
+  const cols = p.gridRes;
+  const rows = Math.round(p.gridRes * 0.75);
+  const built = buildCompleteCADBox(p, cols, rows);
   boxGroup = built.group;
   scene.add(boxGroup);
 
   const physicalPoleLen = Math.max(10, p.ZL - p.ledOffset);
-  const tubeCircumference = (Math.PI * p.poleOD).toFixed(1);
 
   document.getElementById('specsSummary').innerHTML = `
-    <b>PURE-VECTOR CAD &amp; RAY-TRACER SPECS:</b><br>
-    • <b>Geometry Engine:</b> Continuous Spline Loop + <code>THREE.ExtrudeGeometry</code><br>
-    • <b>Corner Joints:</b> 4 Welded Corner Pillars (0 Corner Gaps)<br>
-    • <b>Floating Islands Fixed:</b> ${bridgedCountTotal} island(s) ${p.islandMode === 'bridge' ? 'bridged' : 'removed'}<br>
+    <b>CONICAL CAD &amp; SUB-PIXEL ACCURACY REPORT:</b><br>
+    • <b>Projected Shadow Match:</b> <span style="color:#4ade80;font-weight:700;">${shadowAccuracyPct.toFixed(2)}%</span> (Physical vs Target)<br>
+    • <b>Wall Bevel Geometry:</b> Conical Ray-Aligned Extrusion (0 Parallax)<br>
+    • <b>Contour Engine:</b> Sub-Pixel Bilinear Marching Squares + RDP<br>
+    • <b>Floating Islands:</b> ${bridgedCountTotal} island(s) ${p.islandMode === 'bridge' ? 'auto-bridged' : p.islandMode}<br>
     • <b>LED Center Height (Z_L):</b> ${p.ZL} mm (Pole Cut: ${physicalPoleLen.toFixed(1)} mm)
   `;
 }
@@ -1011,8 +1306,8 @@ function rebuildShadowBox() {
 [
   'boxW', 'boxH', 'lightZ', 'ledOffset', 'poleOD', 'poleID',
   'wallScale', 'wallThick', 'imgZoom', 'imgOffX', 'imgOffY',
-  'invertImg', 'flipImg', 'includeTabs', 'showRays',
-  'islandMode', 'bridgeWidth', 'smoothIters'
+  'invertImg', 'flipImg', 'includeTabs', 'showRays', 'showDiff',
+  'islandMode', 'bridgeWidth', 'smoothIters', 'gridRes'
 ].forEach(id => {
   document.getElementById(id).addEventListener('input', () => {
     renderSourceToMask();
@@ -1020,38 +1315,42 @@ function rebuildShadowBox() {
   });
 });
 
-// Helper: Converts a smoothed point array into a continuous SVG Quadratic Bezier (`Q`) spline path!
+// Converts sub-pixel smoothed contour points into a high-precision Cubic/Quadratic Bezier SVG path
+// while keeping pinned base corners sharp
 function pointsToSmoothBezierSvgPath(pts, transformFn) {
   if (pts.length < 3) return '';
-  const mapped = pts.map(transformFn);
+  const mapped = pts.map(p => ({ ...transformFn(p), pinned: p.pinned }));
   const n = mapped.length;
   const startMidX = 0.5 * (mapped[n - 1].x + mapped[0].x);
   const startMidY = 0.5 * (mapped[n - 1].y + mapped[0].y);
-  let d = `M ${startMidX.toFixed(2)},${startMidY.toFixed(2)} `;
+  let d = `M ${startMidX.toFixed(3)},${startMidY.toFixed(3)} `;
 
   for (let i = 0; i < n; i++) {
     const curr = mapped[i];
     const next = mapped[(i + 1) % n];
     const midX = 0.5 * (curr.x + next.x);
     const midY = 0.5 * (curr.y + next.y);
-    d += `Q ${curr.x.toFixed(2)},${curr.y.toFixed(2)} ${midX.toFixed(2)},${midY.toFixed(2)} `;
+    if (curr.pinned) {
+      d += `L ${curr.x.toFixed(3)},${curr.y.toFixed(3)} L ${midX.toFixed(3)},${midY.toFixed(3)} `;
+    } else {
+      d += `Q ${curr.x.toFixed(3)},${curr.y.toFixed(3)} ${midX.toFixed(3)},${midY.toFixed(3)} `;
+    }
   }
   return d + 'Z ';
 }
 
 // ============================================================================
-// STAGE 3: EXPORT PURE-BEZIER VECTOR CARDBOARD TEMPLATE (.SVG)
-// Outputs ONE smooth Bezier curve path (`Q`) per loop—zero grid cells!
+// STAGE 4: EXPORT HIGH-PRECISION SUB-PIXEL BEZIER SVG TEMPLATE (.SVG)
 // ============================================================================
 document.getElementById('exportSvgBtn').addEventListener('click', () => {
   const btn = document.getElementById('exportSvgBtn');
   const origText = btn.textContent;
-  btn.textContent = '⏳ Tracing Smooth Bezier SVG Curves...';
+  btn.textContent = '⏳ Tracing Sub-Pixel Bezier SVG...';
 
   setTimeout(() => {
     const p = getParams();
-    const walls = traceAndSmoothWallShapes(p, 360, 260);
-    const zMax = p.ZL * 0.90;
+    const walls = traceSubPixelWallShapes(p, 480, 360);
+    const zMax = p.ZL * 0.92;
     const pad = 22;
     const gaugePanelWidth = 95;
     const boxAreaW = p.W + 2 * zMax + pad * 2;
@@ -1095,7 +1394,6 @@ document.getElementById('exportSvgBtn').addEventListener('click', () => {
         wallPathD += pointsToSmoothBezierSvgPath(hLoop.pts, mapPt);
       }
 
-      // Uses fill-rule="evenodd" so inner hole curves are cleanly cut out of the black wall!
       svgElements += `<path d="${wallPathD}" fill="#000000" fill-rule="evenodd" stroke="none"/>\n`;
     }
 
@@ -1148,24 +1446,24 @@ document.getElementById('exportSvgBtn').addEventListener('click', () => {
     const blob = new Blob([svgContent], { type: 'image/svg+xml' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `shadowbox_bezier_${p.W}x${p.H}_ZL${p.ZL}mm.svg`;
+    a.download = `shadowbox_subpixel_${p.W}x${p.H}_ZL${p.ZL}mm.svg`;
     a.click();
     btn.textContent = origText;
   }, 40);
 });
 
 // ============================================================================
-// STAGE 4: EXPORT SMOOTH CAD EXTRUDED BINARY .STL
+// STAGE 5: EXPORT CONICAL RAY-ALIGNED BINARY .STL
 // ============================================================================
 document.getElementById('exportStlBtn').addEventListener('click', () => {
   const btn = document.getElementById('exportStlBtn');
   const origText = btn.textContent;
-  btn.textContent = '⏳ Extruding Smooth CAD Binary STL...';
+  btn.textContent = '⏳ Building Conical Ray-Aligned STL...';
 
   setTimeout(() => {
     try {
       const p = getParams();
-      const { group: exportGroup } = buildCompleteCADBox(p, 360, 260);
+      const { group: exportGroup } = buildCompleteCADBox(p, 460, 340);
       exportGroup.updateMatrixWorld(true);
 
       const meshes = [];
@@ -1236,11 +1534,11 @@ document.getElementById('exportStlBtn').addEventListener('click', () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `shadowbox_CAD_${p.W}x${p.H}_ZL${p.ZL}mm.stl`;
+      a.download = `shadowbox_CONICAL_CAD_${p.W}x${p.H}_ZL${p.ZL}mm.stl`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
       statusEl.style.color = '#4ade80';
-      statusEl.textContent = `✅ Exported Smooth CAD STL (${totalTriangles.toLocaleString()} tris, ${(bufferByteLength / 1024).toFixed(0)} KB)`;
+      statusEl.textContent = `✅ Exported Conical STL (${totalTriangles.toLocaleString()} tris, ${(bufferByteLength / 1024).toFixed(0)} KB)`;
     } catch (err) {
       statusEl.style.color = '#f87171';
       statusEl.textContent = `❌ STL Export Error: ${err.message}`;
