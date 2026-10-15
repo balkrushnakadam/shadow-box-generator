@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShadowBox Studio Pro - Ultra HD Export</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; display: flex; flex-direction: row; height: 100vh; background: #121212; color: #eee; overflow: hidden; }
+    #sidebar { width: 360px; background: #1a1a1a; padding: 14px; overflow-y: auto; border-right: 1px solid #333; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
+    h2 { margin: 0; font-size: 1.15rem; color: #ffca28; display: flex; align-items: center; justify-content: space-between; }
+    .badge { font-size: 0.68rem; background: #333; color: #ffca28; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+    .sub { font-size: 0.74rem; color: #aaa; margin-top: 2px; }
+    .section-title { font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #ffca28; margin-bottom: 6px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+    label { font-size: 0.76rem; color: #ccc; display: flex; justify-content: space-between; margin-top: 6px; margin-bottom: 2px; }
+    label span.val { color: #ffca28; font-weight: 600; font-variant-numeric: tabular-nums; }
+    input[type="range"], select { width: 100%; accent-color: #ffca28; cursor: pointer; background: #141414; color: #eee; border: 1px solid #444; border-radius: 4px; padding: 4px; }
+    .file-upload-btn { display: block; width: 100%; padding: 10px; background: #2e3b4e; color: #4fc3f7; border: 1px dashed #4fc3f7; border-radius: 6px; text-align: center; font-weight: 600; font-size: 0.82rem; cursor: pointer; margin-bottom: 4px; }
+    .file-upload-btn:hover { background: #37475e; }
+    #svgUpload { display: none; }
+    #uploadStatus { font-size: 0.73rem; color: #81c784; margin: 4px 0; min-height: 16px; word-break: break-all; }
+    .row-checks { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+    .check-label { font-size: 0.76rem; color: #ddd; display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0; }
+    .control-group { background: #242424; padding: 10px 12px; border-radius: 8px; border: 1px solid #323232; }
+    .specs-box { background: #162229; border: 1px solid #294c60; padding: 9px 11px; border-radius: 8px; font-size: 0.75rem; line-height: 1.45; color: #cde8f6; }
+    .specs-box b { color: #4fc3f7; }
+    button { width: 100%; padding: 9px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 6px; font-size: 0.8rem; transition: 0.15s; }
+    .btn-primary { background: #ffca28; color: #111; }
+    .btn-primary:hover { background: #ffb300; }
+    .btn-stl { background: #4fc3f7; color: #0a1922; }
+    .btn-stl:hover { background: #29b6f6; }
+    .btn-secondary { background: #383838; color: #fff; }
+    .btn-secondary:hover { background: #484848; }
+    .btn-row { display: flex; gap: 6px; }
+    #svgPasteBox { display: none; margin-top: 8px; }
+    #svgPasteInput { width: 100%; height: 70px; background: #141414; color: #eee; border: 1px solid #555; border-radius: 4px; font-size: 0.72rem; padding: 6px; font-family: monospace; }
+    #main { flex: 1; display: flex; flex-direction: column; position: relative; height: 100%; }
+    #viewport { width: 100%; height: 100%; }
+    #preview-bar { position: absolute; bottom: 12px; left: 12px; background: rgba(20,20,20,0.92); padding: 8px 10px; border-radius: 8px; border: 1px solid #444; display: flex; gap: 10px; align-items: center; max-width: calc(100% - 24px); pointer-events: none; }
+    canvas.mini { background: #fff; border-radius: 4px; width: 58px; height: 58px; border: 1px solid #666; flex-shrink: 0; }
+    @media (max-width: 750px) {
+      body { flex-direction: column-reverse; }
+      #sidebar { width: 100%; height: 52vh; border-right: none; border-top: 1px solid #333; }
+      #main { height: 48vh; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div>
+    <h2>ShadowBox Studio <span class="badge">ULTRA HD</span></h2>
+    <div class="sub">Sub-Millimeter Precision SVG &amp; STL Generator</div>
+  </div>
+
+  <!-- 1. SILHOUETTE & ALIGNMENT -->
+  <div class="control-group">
+    <div class="section-title">1. Silhouette &amp; Alignment</div>
+    <label for="svgUpload" class="file-upload-btn">📂 Open SVG / PNG / JPG File</label>
+    <input type="file" id="svgUpload" accept="*/*">
+    <div id="uploadStatus">Status: Using Built-in Demo Silhouette</div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" id="togglePasteBtn">Paste SVG Code</button>
+      <button class="btn-secondary" id="loadDemoBtn">Demo Art</button>
+      <button class="btn-secondary" id="resetAlignBtn">Reset Fit</button>
+    </div>
+
+    <div id="svgPasteBox">
+      <textarea id="svgPasteInput" placeholder="Paste raw <svg>...</svg> XML code here..."></textarea>
+      <button class="btn-primary" id="applyPasteBtn">Render Pasted SVG</button>
+    </div>
+
+    <div class="row-checks">
+      <label class="check-label"><input type="checkbox" id="invertImg"> Invert B&amp;W</label>
+      <label class="check-label"><input type="checkbox" id="flipImg"> Flip Horizontal</label>
+      <label class="check-label"><input type="checkbox" id="trueRayPreview" checked> True 3D Wall Shadow</label>
+    </div>
+
+    <label><span>Image Zoom (%)</span><span class="val" id="valZoom">100%</span></label>
+    <input type="range" id="imgZoom" min="30" max="220" value="100">
+
+    <label><span>Horizontal Shift X (mm)</span><span class="val" id="valOffX">0</span></label>
+    <input type="range" id="imgOffX" min="-150" max="150" value="0">
+
+    <label><span>Vertical Shift Y (mm)</span><span class="val" id="valOffY">0</span></label>
+    <input type="range" id="imgOffY" min="-150" max="150" value="0">
+  </div>
+
+  <!-- 2. BOX & SHADOW DIMENSIONS -->
+  <div class="control-group">
+    <div class="section-title">2. Box &amp; Shadow Dimensions</div>
+    <label><span>Box Width (mm)</span><span class="val" id="valW">90</span></label>
+    <input type="range" id="boxW" min="40" max="180" value="90">
+
+    <label><span>Box Height (mm)</span><span class="val" id="valH">140</span></label>
+    <input type="range" id="boxH" min="40" max="220" value="140">
+
+    <label><span>Shadow Size on Wall (mm)</span><span class="val" id="valS">380</span></label>
+    <input type="range" id="wallScale" min="180" max="650" value="380">
+  </div>
+
+  <!-- 3. LIGHT POLE & SPECS -->
+  <div class="control-group">
+    <div class="section-title">3. Center Light Pole &amp; Precision</div>
+    <label><span>Target Light Distance Z_L (mm)</span><span class="val" id="valZ">75</span></label>
+    <input type="range" id="lightZ" min="40" max="150" value="75">
+
+    <label><span>LED Bulb Offset / Tip Allowance (mm)</span><span class="val" id="valLed">6</span></label>
+    <input type="range" id="ledOffset" min="0" max="20" step="0.5" value="6">
+
+    <label><span>Pole Outer Diameter (mm)</span><span class="val" id="valPoleOD">8.0</span></label>
+    <input type="range" id="poleOD" min="5" max="16" step="0.5" value="8.0">
+
+    <label><span>Inner Wire Hole Diameter (mm)</span><span class="val" id="valPoleID">4.0</span></label>
+    <input type="range" id="poleID" min="2" max="10" step="0.5" value="4.0">
+
+    <label><span>3D Wall Thickness (mm)</span><span class="val" id="valT">2.0</span></label>
+    <input type="range" id="wallThick" min="1" max="5" step="0.5" value="2.0">
+
+    <label><span>Export Mesh Precision</span></label>
+    <select id="exportQuality">
+      <option value="ultra" selected>Ultra-Fine (500x360 grid - Best for Trishul/Fine Art)</option>
+      <option value="high">High (360x260 grid - Faster export)</option>
+    </select>
+
+    <div class="row-checks">
+      <label class="check-label"><input type="checkbox" id="includeTabs" checked> Add Glue Tabs to SVG</label>
+      <label class="check-label"><input type="checkbox" id="showGauge3D" checked> Show 3D Pole Ruler</label>
+    </div>
+  </div>
+
+  <!-- LIVE SUMMARY -->
+  <div class="specs-box" id="specsSummary"></div>
+
+  <!-- 4. EXPORT -->
+  <div class="control-group">
+    <div class="section-title">4. Download Ultra-HD Printable Files</div>
+    <button class="btn-primary" id="exportSvgBtn">Download Ultra-Sharp Cardboard (.SVG)</button>
+    <button class="btn-stl" id="exportStlBtn">Download Ultra-Sharp 3D Print (.STL)</button>
+  </div>
+</div>
+
+<div id="main">
+  <div id="viewport"></div>
+  <div id="preview-bar">
+    <canvas id="maskCanvas" class="mini" width="2048" height="2048"></canvas>
+    <div style="font-size:0.74rem; color:#ccc;">
+      <b>2048px Zero-Blur Contour Engine</b><br>
+      Exports use sub-millimeter 500x360 ray-tracing.
+    </div>
+  </div>
+</div>
+
+<script>
+const maskCanvas = document.getElementById('maskCanvas');
+const ctx = maskCanvas.getContext('2d', { willReadFrequently: true });
+const statusEl = document.getElementById('uploadStatus');
+let maskData = null;
+let uploadedImg = null;
+
+function normalizeSvgText(svgText) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgText, 'image/svg+xml');
+  const svg = doc.querySelector('svg');
+  if (!svg) throw new Error('No <svg> tag found in file.');
+
+  if (!svg.getAttribute('xmlns')) {
+    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  }
+
+  let vb = svg.getAttribute('viewBox');
+  let wAttr = parseFloat(svg.getAttribute('width')) || 0;
+  let hAttr = parseFloat(svg.getAttribute('height')) || 0;
+
+  if (vb) {
+    const parts = vb.trim().split(/[\s,]+/).map(Number);
+    if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) {
+      wAttr = parts[2];
+      hAttr = parts[3];
+    }
+  } else if (wAttr > 0 && hAttr > 0) {
+    svg.setAttribute('viewBox', `0 0 ${wAttr} ${hAttr}`);
+  } else {
+    wAttr = 1000;
+    hAttr = 1000;
+    svg.setAttribute('viewBox', '0 0 1000 1000');
+  }
+
+  // Render at 2048px for razor-sharp thin lines (Trishul, facial details, etc.)
+  const maxDim = 2048;
+  const scale = maxDim / Math.max(wAttr, hAttr);
+  svg.setAttribute('width', Math.round(wAttr * scale) + 'px');
+  svg.setAttribute('height', Math.round(hAttr * scale) + 'px');
+
+  return new XMLSerializer().serializeToString(svg);
+}
+
+function loadSvgStringIntoApp(rawSvgString, labelName) {
+  try {
+    const fixedSvg = normalizeSvgText(rawSvgString);
+    const encoded = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fixedSvg);
+    const img = new Image();
+    img.onload = () => {
+      uploadedImg = img;
+      statusEl.style.color = '#81c784';
+      statusEl.textContent = `✅ Loaded Ultra-HD SVG: ${labelName}`;
+      renderSourceToMask();
+      rebuildShadowBox();
+    };
+    img.onerror = () => {
+      statusEl.style.color = '#ff5252';
+      statusEl.textContent = `❌ Could not render SVG image data.`;
+    };
+    img.src = encoded;
+  } catch (err) {
+    statusEl.style.color = '#ff5252';
+    statusEl.textContent = `❌ SVG Error: ${err.message}`;
+  }
+}
+
+document.getElementById('svgUpload').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  statusEl.style.color = '#ffca28';
+  statusEl.textContent = `⏳ Reading ${file.name}...`;
+
+  const isSvg = file.name.toLowerCase().endsWith('.svg') || file.type.includes('svg');
+
+  if (isSvg) {
+    const textReader = new FileReader();
+    textReader.onload = (ev) => loadSvgStringIntoApp(ev.target.result, file.name);
+    textReader.readAsText(file);
+  } else {
+    const dataReader = new FileReader();
+    dataReader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        uploadedImg = img;
+        statusEl.style.color = '#81c784';
+        statusEl.textContent = `✅ Loaded Image: ${file.name} (${img.width}x${img.height})`;
+        renderSourceToMask();
+        rebuildShadowBox();
+      };
+      img.src = ev.target.result;
+    };
+    dataReader.readAsDataURL(file);
+  }
+  e.target.value = '';
+});
+
+document.getElementById('togglePasteBtn').addEventListener('click', () => {
+  const box = document.getElementById('svgPasteBox');
+  box.style.display = box.style.display === 'block' ? 'none' : 'block';
+});
+
+document.getElementById('applyPasteBtn').addEventListener('click', () => {
+  const raw = document.getElementById('svgPasteInput').value.trim();
+  if (!raw) return;
+  loadSvgStringIntoApp(raw, 'Pasted SVG');
+  document.getElementById('svgPasteBox').style.display = 'none';
+});
+
+function renderSourceToMask() {
+  const w = maskCanvas.width, h = maskCanvas.height;
+  const invert = document.getElementById('invertImg').checked;
+  const flip = document.getElementById('flipImg').checked;
+  const zoom = parseFloat(document.getElementById('imgZoom').value) / 100;
+  const offX = parseFloat(document.getElementById('imgOffX').value);
+  const offY = parseFloat(document.getElementById('imgOffY').value);
+  const wallScale = parseFloat(document.getElementById('wallScale').value);
+
+  document.getElementById('valZoom').textContent = Math.round(zoom * 100) + '%';
+  document.getElementById('valOffX').textContent = offX;
+  document.getElementById('valOffY').textContent = offY;
+
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  const pxShiftX = (offX / wallScale) * w;
+  const pxShiftY = -(offY / wallScale) * h;
+
+  ctx.translate(w / 2 + pxShiftX, h / 2 + pxShiftY);
+  if (flip) ctx.scale(-zoom, zoom);
+  else ctx.scale(zoom, zoom);
+  ctx.translate(-w / 2, -h / 2);
+
+  // NO BLUR! Keeps fine features like Trishul tips & facial cutouts 100% sharp
+  ctx.filter = 'none';
+
+  if (uploadedImg) {
+    const imgW = uploadedImg.naturalWidth || uploadedImg.width || 1024;
+    const imgH = uploadedImg.naturalHeight || uploadedImg.height || 1024;
+    const scale = Math.min(w / imgW, h / imgH) * 0.90;
+    const dw = imgW * scale, dh = imgH * scale;
+    ctx.drawImage(uploadedImg, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  } else {
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(w * 0.52, h * 0.22, w * 0.105, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(w * 0.22, h * 0.96);
+    ctx.lineTo(w * 0.16, h * 0.55);
+    ctx.quadraticCurveTo(w * 0.22, h * 0.34, w * 0.44, h * 0.31);
+    ctx.lineTo(w * 0.60, h * 0.31);
+    ctx.quadraticCurveTo(w * 0.80, h * 0.35, w * 0.82, h * 0.65);
+    ctx.lineTo(w * 0.86, h * 0.96);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(w * 0.28, h * 0.08);
+    ctx.rotate(-0.12);
+    ctx.fillRect(0, 0, w * 0.045, h * 0.48);
+    ctx.fillRect(w * 0.065, h * 0.037, w * 0.015, h * 0.38);
+    ctx.fillRect(w * 0.09, h * 0.025, w * 0.015, h * 0.40);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    let lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
+    if (invert) lum = 255 - lum;
+    d[i] = d[i+1] = d[i+2] = lum;
+    d[i+3] = 255;
+  }
+  ctx.putImageData(imgData, 0, 0);
+  maskData = ctx.getImageData(0, 0, w, h);
+
+  // Draw red box footprint indicator on preview canvas only
+  const W = parseFloat(document.getElementById('boxW').value);
+  const H = parseFloat(document.getElementById('boxH').value);
+  const bw = (W / wallScale) * w;
+  const bh = (H / wallScale) * h;
+  ctx.strokeStyle = '#ff1744';
+  ctx.lineWidth = 18;
+  ctx.strokeRect((w - bw) / 2, (h - bh) / 2, bw, bh);
+}
+
+function sampleShadowStrength(Xw, Yw, wallScale) {
+  if (!maskData) return 0;
+  const u = (Xw / wallScale) + 0.5;
+  const v = 0.5 - (Yw / wallScale);
+  if (u < 0 || u >= 1 || v < 0 || v >= 1) return 0;
+
+  const W = maskCanvas.width, H = maskCanvas.height;
+  const fx = u * (W - 1), fy = v * (H - 1);
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  const x1 = Math.min(W - 1, x0 + 1), y1 = Math.min(H - 1, y0 + 1);
+  const dx = fx - x0, dy = fy - y0;
+
+  const getDark = (x, y) => 1.0 - (maskData.data[(y * W + x) * 4] / 255);
+
+  const v00 = getDark(x0, y0), v10 = getDark(x1, y0);
+  const v01 = getDark(x0, y1), v11 = getDark(x1, y1);
+  return (v00 * (1 - dx) + v10 * dx) * (1 - dy) + (v01 * (1 - dx) + v11 * dx) * dy;
+}
+
+document.getElementById('loadDemoBtn').addEventListener('click', () => {
+  uploadedImg = null;
+  statusEl.style.color = '#81c784';
+  statusEl.textContent = 'Status: Using Built-in Demo Silhouette';
+  renderSourceToMask();
+  rebuildShadowBox();
+});
+
+document.getElementById('resetAlignBtn').addEventListener('click', () => {
+  document.getElementById('imgZoom').value = 100;
+  document.getElementById('imgOffX').value = 0;
+  document.getElementById('imgOffY').value = 0;
+  document.getElementById('invertImg').checked = false;
+  document.getElementById('flipImg').checked = false;
+  renderSourceToMask();
+  rebuildShadowBox();
+});
+
+// --- DUAL-PRECISION MARCHING SQUARES ENGINE ---
+// cols & rows can be set to interactive preview speed (240x170) or Ultra-HD Export (500x360)
+function buildSmoothWallData(params, cols = 240, rows = 170) {
+  const { W, H, ZL, S } = params;
+  const zMax = ZL * 0.90;
+  const iso = 0.5;
+
+  const wallDefs = {
+    top:    { len: W },
+    bottom: { len: W },
+    left:   { len: H },
+    right:  { len: H }
+  };
+
+  for (const [key, wObj] of Object.entries(wallDefs)) {
+    const L = wObj.len;
+    const field = Array.from({ length: cols + 1 }, () => new Float32Array(rows + 1));
+
+    for (let c = 0; c <= cols; c++) {
+      const u = (c / cols) - 0.5;
+      for (let r = 0; r <= rows; r++) {
+        const zBox = (r / rows) * zMax;
+        if (zBox <= 2.6) {
+          field[c][r] = 1.0; // Solid base rim connecting wall to backplate
+          continue;
+        }
+        if (r === rows) {
+          field[c][r] = 0.0;
+          continue;
+        }
+        const t = 1.0 - (zBox / ZL);
+        if (t <= 0.05) {
+          field[c][r] = 0.0;
+          continue;
+        }
+        let Xw = 0, Yw = 0;
+        if (key === 'top')    { Xw = (u * W) / t; Yw = ( 0.5 * H) / t; }
+        if (key === 'bottom') { Xw = (u * W) / t; Yw = (-0.5 * H) / t; }
+        if (key === 'right')  { Xw = ( 0.5 * W) / t; Yw = (u * H) / t; }
+        if (key === 'left')   { Xw = (-0.5 * W) / t; Yw = (u * H) / t; }
+
+        field[c][r] = sampleShadowStrength(Xw, Yw, S);
+      }
+    }
+
+    const cellPolys = [];
+    for (let c = 0; c < cols; c++) {
+      const x0 = ((c / cols) - 0.5) * L;
+      const x1 = (((c + 1) / cols) - 0.5) * L;
+      for (let r = 0; r < rows; r++) {
+        const z0 = (r / rows) * zMax;
+        const z1 = ((r + 1) / rows) * zMax;
+
+        const v0 = field[c][r],     v1 = field[c + 1][r];
+        const v2 = field[c + 1][r + 1], v3 = field[c][r + 1];
+        if (v0 < iso && v1 < iso && v2 < iso && v3 < iso) continue;
+
+        const pts = [
+          { x: x0, z: z0, v: v0 },
+          { x: x1, z: z0, v: v1 },
+          { x: x1, z: z1, v: v2 },
+          { x: x0, z: z1, v: v3 }
+        ];
+
+        const poly = [];
+        for (let i = 0; i < 4; i++) {
+          const cur = pts[i];
+          const nxt = pts[(i + 1) % 4];
+          const curIn = cur.v >= iso;
+          const nxtIn = nxt.v >= iso;
+          if (curIn) poly.push({ x: cur.x, z: cur.z });
+          if (curIn !== nxtIn) {
+            const frac = (iso - cur.v) / (nxt.v - cur.v);
+            poly.push({
+              x: cur.x + frac * (nxt.x - cur.x),
+              z: cur.z + frac * (nxt.z - cur.z)
+            });
+          }
+        }
+        if (poly.length >= 3) cellPolys.push(poly);
+      }
+    }
+    wObj.cellPolys = cellPolys;
+  }
+  return wallDefs;
+}
+
+function buildThickWallGeometry(cellPolys, T) {
+  const positions = [];
+  const halfT = T / 2;
+  const pushTri = (ax, ay, az, bx, by, bz, cx, cy, cz) => {
+    positions.push(ax, ay, az, bx, by, bz, cx, cy, cz);
+  };
+
+  for (const poly of cellPolys) {
+    const n = poly.length;
+    for (let i = 1; i < n - 1; i++) {
+      const p0 = poly[0], p1 = poly[i], p2 = poly[i + 1];
+      pushTri(p0.x,  halfT, p0.z, p1.x,  halfT, p1.z, p2.x,  halfT, p2.z);
+      pushTri(p0.x, -halfT, p0.z, p2.x, -halfT, p2.z, p1.x, -halfT, p1.z);
+    }
+    for (let i = 0; i < n; i++) {
+      const a = poly[i], b = poly[(i + 1) % n];
+      pushTri(a.x, -halfT, a.z, b.x, -halfT, b.z, b.x,  halfT, b.z);
+      pushTri(a.x, -halfT, a.z, b.x,  halfT, b.z, a.x,  halfT, a.z);
+    }
+  }
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.computeVertexNormals();
+  return geom;
+}
+
+function buildHollowStalkGeometry(outerR, innerR, length) {
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, outerR, 0, Math.PI * 2, false);
+  if (innerR > 0 && innerR < outerR - 0.4) {
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, innerR, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+  }
+  return new THREE.ExtrudeGeometry(shape, { depth: length, bevelEnabled: false, curveSegments: 32 });
+}
+
+function buildBackplateWithHoleGeometry(W, H, T, holeR) {
+  const shape = new THREE.Shape();
+  const hw = W / 2 + T, hh = H / 2 + T;
+  shape.moveTo(-hw, -hh);
+  shape.lineTo( hw, -hh);
+  shape.lineTo( hw,  hh);
+  shape.lineTo(-hw,  hh);
+  shape.closePath();
+
+  if (holeR > 0) {
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, holeR, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+  }
+  return new THREE.ExtrudeGeometry(shape, { depth: T, bevelEnabled: false, curveSegments: 24 });
+}
+
+// --- THREE.JS SCENE ---
+const container = document.getElementById('viewport');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0d0d);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 1, 3500);
+camera.position.set(0, -140, 520);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+// BasicShadowMap or PCFShadowMap with 4096 mapSize gives much sharper edges than PCFSoftShadowMap
+renderer.shadowMap.type = THREE.PCFShadowMap;
+container.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+const wallGeo = new THREE.PlaneGeometry(1400, 1400);
+const wallMat = new THREE.MeshStandardMaterial({
+  color: 0xffca64,
+  roughness: 0.85,
+  metalness: 0.05
+});
+const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+wallMesh.receiveShadow = true;
+scene.add(wallMesh);
+
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.25);
+fillLight.position.set(100, -200, 400);
+scene.add(fillLight);
+
+// 4096x4096 High-Density Shadow Map for True 3D Wall Shadow
+const maxTexSize = renderer.capabilities.maxTextureSize || 2048;
+const shadowRes = Math.min(4096, maxTexSize);
+const spotLight = new THREE.SpotLight(0xffd580, 2.2, 2000, Math.PI * 0.44, 0.15, 0);
+spotLight.castShadow = true;
+spotLight.shadow.mapSize.width = shadowRes;
+spotLight.shadow.mapSize.height = shadowRes;
+spotLight.shadow.camera.near = 8;
+spotLight.shadow.camera.far = 450;
+spotLight.shadow.bias = -0.0002;
+spotLight.target.position.set(0, 0, 0);
+scene.add(spotLight);
+scene.add(spotLight.target);
+
+let boxGroup = new THREE.Group();
+scene.add(boxGroup);
+
+function getParams() {
+  const poleOD = parseFloat(document.getElementById('poleOD').value);
+  let poleID = parseFloat(document.getElementById('poleID').value);
+  if (poleID >= poleOD - 1.0) poleID = Math.max(1.0, poleOD - 1.5);
+
+  const q = document.getElementById('exportQuality').value;
+  const exportCols = q === 'ultra' ? 500 : 360;
+  const exportRows = q === 'ultra' ? 360 : 260;
+
+  return {
+    W: parseFloat(document.getElementById('boxW').value),
+    H: parseFloat(document.getElementById('boxH').value),
+    ZL: parseFloat(document.getElementById('lightZ').value),
+    ledOffset: parseFloat(document.getElementById('ledOffset').value),
+    poleOD,
+    poleID,
+    S: parseFloat(document.getElementById('wallScale').value),
+    T: parseFloat(document.getElementById('wallThick').value),
+    includeTabs: document.getElementById('includeTabs').checked,
+    showGauge3D: document.getElementById('showGauge3D').checked,
+    exportCols,
+    exportRows
+  };
+}
+
+function buildCompleteBoxMeshes(p, cols, rows) {
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: 0x181818, roughness: 0.7 });
+  const walls = buildSmoothWallData(p, cols, rows);
+  const physicalPoleLen = Math.max(10, p.ZL - p.ledOffset);
+
+  const backGeo = buildBackplateWithHoleGeometry(p.W, p.H, p.T, p.poleID / 2);
+  const backMesh = new THREE.Mesh(backGeo, mat);
+  backMesh.castShadow = true;
+  backMesh.userData.exportStl = true;
+  group.add(backMesh);
+
+  const stalkGeo = buildHollowStalkGeometry(p.poleOD / 2, p.poleID / 2, physicalPoleLen);
+  const stalkMesh = new THREE.Mesh(stalkGeo, mat);
+  stalkMesh.castShadow = false;
+  stalkMesh.userData.exportStl = true;
+  group.add(stalkMesh);
+
+  for (const [key, wObj] of Object.entries(walls)) {
+    const geom = buildThickWallGeometry(wObj.cellPolys, p.T);
+    if (key === 'top') {
+      geom.translate(0, p.H / 2 + p.T / 2, 0);
+    } else if (key === 'bottom') {
+      geom.translate(0, -p.H / 2 - p.T / 2, 0);
+    } else if (key === 'right') {
+      geom.rotateZ(Math.PI / 2);
+      geom.translate(p.W / 2 + p.T / 2, 0, 0);
+    } else if (key === 'left') {
+      geom.rotateZ(Math.PI / 2);
+      geom.translate(-p.W / 2 - p.T / 2, 0, 0);
+    }
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.castShadow = true;
+    mesh.userData.exportStl = true;
+    group.add(mesh);
+  }
+
+  const bulb = new THREE.Mesh(
+    new THREE.SphereGeometry(Math.max(2.5, p.poleOD * 0.42), 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xfff3b0 })
+  );
+  bulb.position.set(0, 0, p.ZL);
+  bulb.castShadow = false;
+  group.add(bulb);
+
+  if (p.showGauge3D) {
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x4fc3f7 });
+    const pts = [
+      new THREE.Vector3(0, -14, 0),
+      new THREE.Vector3(0, -14, p.ZL),
+      new THREE.Vector3(0, 0, p.ZL)
+    ];
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+    group.add(new THREE.Line(lineGeo, lineMat));
+  }
+
+  return { group, walls };
+}
+
+function rebuildShadowBox() {
+  const p = getParams();
+  document.getElementById('valW').textContent = p.W;
+  document.getElementById('valH').textContent = p.H;
+  document.getElementById('valZ').textContent = p.ZL;
+  document.getElementById('valLed').textContent = p.ledOffset;
+  document.getElementById('valPoleOD').textContent = p.poleOD.toFixed(1);
+  document.getElementById('valPoleID').textContent = p.poleID.toFixed(1);
+  document.getElementById('valS').textContent = p.S;
+  document.getElementById('valT').textContent = p.T.toFixed(1);
+
+  const physicalPoleLen = Math.max(10, p.ZL - p.ledOffset);
+  const tubeCircumference = (Math.PI * p.poleOD).toFixed(1);
+  const stepMm = (p.W / p.exportCols).toFixed(2);
+
+  document.getElementById('specsSummary').innerHTML = `
+    <b>LIVE POLE &amp; EXPORT PRECISION SPECS:</b><br>
+    • <b>Export Wall Precision:</b> ${p.exportCols}×${p.exportRows} grid (<b>${stepMm} mm</b> step accuracy)<br>
+    • <b>LED Filament Center Height (Z_L):</b> ${p.ZL} mm from wall<br>
+    • <b>Physical Pole Cut Length:</b> ${physicalPoleLen.toFixed(1)} mm <i>(leaves ${p.ledOffset} mm for LED tip)</i><br>
+    • <b>Cardboard Roll-Up Pole Strip:</b> ${physicalPoleLen.toFixed(1)} × ${tubeCircumference} mm (+6 mm lap)
+  `;
+
+  spotLight.position.set(0, 0, p.ZL);
+  // Tighten shadow frustum angle dynamically to maximize shadow map sharpness on the wall
+  const halfAngle = Math.atan((p.S * 0.72) / p.ZL);
+  spotLight.angle = Math.min(Math.PI * 0.47, Math.max(0.35, halfAngle));
+
+  scene.remove(boxGroup);
+  // Use responsive 240x170 grid while dragging sliders
+  const built = buildCompleteBoxMeshes(p, 240, 170);
+  boxGroup = built.group;
+  scene.add(boxGroup);
+}
+
+[
+  'boxW', 'boxH', 'lightZ', 'ledOffset', 'poleOD', 'poleID',
+  'wallScale', 'wallThick', 'imgZoom', 'imgOffX', 'imgOffY',
+  'invertImg', 'flipImg', 'includeTabs', 'showGauge3D', 'exportQuality', 'trueRayPreview'
+].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    renderSourceToMask();
+    rebuildShadowBox();
+  });
+});
+
+// --- EXPORT ULTRA-HD 2D CARDBOARD TEMPLATE (.SVG) ---
+document.getElementById('exportSvgBtn').addEventListener('click', () => {
+  const btn = document.getElementById('exportSvgBtn');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Computing Ultra-Fine Vector Contours...';
+
+  setTimeout(() => {
+    const p = getParams();
+    // Compute at full Ultra-HD Export Resolution (500x360)
+    const ultraWalls = buildSmoothWallData(p, p.exportCols, p.exportRows);
+    const zMax = p.ZL * 0.90;
+    const pad = 22;
+    const gaugePanelWidth = 95;
+    const boxAreaW = p.W + 2 * zMax + pad * 2;
+    const svgW = boxAreaW + gaugePanelWidth;
+    const svgH = Math.max(p.H + 2 * zMax + pad * 2, p.ZL + 70);
+    const cx = boxAreaW / 2, cy = svgH / 2;
+
+    const physicalPoleLen = Math.max(10, p.ZL - p.ledOffset);
+    const tubeCirc = Math.PI * p.poleOD;
+    const glueLap = 6;
+
+    let svgElements = '';
+
+    if (p.includeTabs) {
+      const tabW = 12;
+      const tabH = Math.min(35, zMax * 0.55);
+      const tabs = [
+        `M ${cx - p.W/2},${cy - p.H/2} L ${cx - p.W/2 - tabW},${cy - p.H/2 - 4} L ${cx - p.W/2 - tabW},${cy - p.H/2 - tabH} L ${cx - p.W/2},${cy - p.H/2 - tabH - 4} Z`,
+        `M ${cx + p.W/2},${cy - p.H/2} L ${cx + p.W/2 + tabW},${cy - p.H/2 - 4} L ${cx + p.W/2 + tabW},${cy - p.H/2 - tabH} L ${cx + p.W/2},${cy - p.H/2 - tabH - 4} Z`,
+        `M ${cx - p.W/2},${cy + p.H/2} L ${cx - p.W/2 - tabW},${cy + p.H/2 + 4} L ${cx - p.W/2 - tabW},${cy + p.H/2 + tabH} L ${cx - p.W/2},${cy + p.H/2 + tabH + 4} Z`,
+        `M ${cx + p.W/2},${cy + p.H/2} L ${cx + p.W/2 + tabW},${cy + p.H/2 + 4} L ${cx + p.W/2 + tabW},${cy + p.H/2 + tabH} L ${cx + p.W/2},${cy + p.H/2 + tabH + 4} Z`
+      ];
+      tabs.forEach(d => {
+        svgElements += `<path d="${d}" fill="#e0e0e0" stroke="#333333" stroke-width="0.4" stroke-dasharray="2,1"/>\n`;
+      });
+    }
+
+    for (const [key, wObj] of Object.entries(ultraWalls)) {
+      let d = '';
+      for (const poly of wObj.cellPolys) {
+        for (let i = 0; i < poly.length; i++) {
+          const pt = poly[i];
+          let sx = 0, sy = 0;
+          if (key === 'top')    { sx = cx + pt.x; sy = cy - p.H / 2 - pt.z; }
+          if (key === 'bottom') { sx = cx + pt.x; sy = cy + p.H / 2 + pt.z; }
+          if (key === 'right')  { sx = cx + p.W / 2 + pt.z; sy = cy - pt.x; }
+          if (key === 'left')   { sx = cx - p.W / 2 - pt.z; sy = cy - pt.x; }
+          d += (i === 0 ? 'M' : 'L') + sx.toFixed(2) + ',' + sy.toFixed(2);
+        }
+        d += 'Z ';
+      }
+      svgElements += `<path d="${d}" fill="#000000" stroke="#000000" stroke-width="0.05" stroke-linejoin="round"/>\n`;
+    }
+
+    svgElements += `<rect x="${cx - p.W/2}" y="${cy - p.H/2}" width="${p.W}" height="${p.H}" fill="none" stroke="#ff1744" stroke-width="0.7" stroke-dasharray="3,2"/>\n`;
+    svgElements += `<circle cx="${cx}" cy="${cy}" r="${(p.poleOD / 2).toFixed(2)}" fill="none" stroke="#00b0ff" stroke-width="0.5"/>\n`;
+    svgElements += `<circle cx="${cx}" cy="${cy}" r="${(p.poleID / 2).toFixed(2)}" fill="none" stroke="#ff1744" stroke-width="0.5"/>\n`;
+    svgElements += `<text x="${cx}" y="${cy + p.poleOD/2 + 5}" font-size="3.2" font-family="sans-serif" text-anchor="middle" fill="#333">CENTER POLE (Ø${p.poleOD}mm)</text>\n`;
+
+    const gx = boxAreaW + 10;
+    const gyBase = svgH - 25;
+    const gyLed = gyBase - p.ZL;
+    const gyCut = gyBase - physicalPoleLen;
+
+    svgElements += `<rect x="${gx - 6}" y="12" width="${gaugePanelWidth - 8}" height="${svgH - 24}" fill="#f9f9f9" stroke="#ccc" stroke-width="0.4"/>\n`;
+    svgElements += `<text x="${gx}" y="20" font-size="3.8" font-weight="bold" font-family="sans-serif" fill="#111">1:1 POLE GAUGE &amp; TUBE</text>\n`;
+    svgElements += `<text x="${gx}" y="25" font-size="2.7" font-family="sans-serif" fill="#444">Print at 100% scale (Do Not Fit)</text>\n`;
+
+    svgElements += `<line x1="${gx + 8}" y1="${gyBase}" x2="${gx + 8}" y2="${gyLed}" stroke="#111" stroke-width="0.6"/>\n`;
+    for (let m = 0; m <= Math.ceil(p.ZL); m += 5) {
+      const ty = gyBase - m;
+      const isMajor = (m % 10 === 0);
+      const tickLen = isMajor ? 5 : 2.8;
+      svgElements += `<line x1="${gx + 8 - tickLen}" y1="${ty}" x2="${gx + 8}" y2="${ty}" stroke="#111" stroke-width="${isMajor ? 0.5 : 0.3}"/>\n`;
+      if (isMajor) {
+        svgElements += `<text x="${gx + 1}" y="${ty + 1}" font-size="2.5" font-family="sans-serif" text-anchor="end" fill="#222">${m}</text>\n`;
+      }
+    }
+
+    svgElements += `<line x1="${gx + 8}" y1="${gyBase}" x2="${gx + 32}" y2="${gyBase}" stroke="#111" stroke-width="0.6"/>\n`;
+    svgElements += `<text x="${gx + 10}" y="${gyBase + 3.5}" font-size="2.7" font-weight="bold" font-family="sans-serif" fill="#111">0 mm (Baseplate)</text>\n`;
+
+    svgElements += `<line x1="${gx + 8}" y1="${gyCut}" x2="${gx + 32}" y2="${gyCut}" stroke="#00897b" stroke-width="0.6" stroke-dasharray="2,1"/>\n`;
+    svgElements += `<text x="${gx + 10}" y="${gyCut - 1.2}" font-size="2.7" font-weight="bold" font-family="sans-serif" fill="#00695c">POLE CUT: ${physicalPoleLen.toFixed(1)} mm</text>\n`;
+
+    svgElements += `<line x1="${gx + 8}" y1="${gyLed}" x2="${gx + 32}" y2="${gyLed}" stroke="#d81b60" stroke-width="0.7"/>\n`;
+    svgElements += `<circle cx="${gx + 18}" cy="${gyLed}" r="2.2" fill="#ffca28" stroke="#d81b60" stroke-width="0.5"/>\n`;
+    svgElements += `<text x="${gx + 10}" y="${gyLed - 3.2}" font-size="2.8" font-weight="bold" font-family="sans-serif" fill="#d81b60">LED CENTER: ${p.ZL} mm</text>\n`;
+
+    const rx = gx + 42;
+    svgElements += `<rect x="${rx}" y="${gyCut}" width="${tubeCirc.toFixed(2)}" height="${physicalPoleLen.toFixed(2)}" fill="#ffffff" stroke="#000" stroke-width="0.5"/>\n`;
+    svgElements += `<rect x="${(rx + tubeCirc).toFixed(2)}" y="${gyCut}" width="${glueLap}" height="${physicalPoleLen.toFixed(2)}" fill="#eeeeee" stroke="#000" stroke-width="0.4" stroke-dasharray="2,1"/>\n`;
+    svgElements += `<text x="${rx}" y="${gyBase + 4.5}" font-size="2.6" font-family="sans-serif" fill="#222">ROLL-UP POLE STRIP</text>\n`;
+    svgElements += `<text x="${rx}" y="${gyBase + 8}" font-size="2.4" font-family="sans-serif" fill="#555">Roll into Ø${p.poleOD}mm tube &amp; glue</text>\n`;
+
+    const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW.toFixed(1)}mm" height="${svgH.toFixed(1)}mm" viewBox="0 0 ${svgW.toFixed(1)} ${svgH.toFixed(1)}">
+      <rect width="100%" height="100%" fill="#ffffff"/>
+      <g>${svgElements}</g>
+    </svg>`;
+
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `shadowbox_ultraHD_${p.W}x${p.H}_ZL${p.ZL}mm.svg`;
+    a.click();
+    btn.textContent = origText;
+  }, 50);
+});
+
+// --- EXPORT ULTRA-HD 3D PRINTABLE FILE (.STL) ---
+document.getElementById('exportStlBtn').addEventListener('click', () => {
+  const btn = document.getElementById('exportStlBtn');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Generating Ultra-Fine 3D Mesh (.STL)...';
+
+  setTimeout(() => {
+    const p = getParams();
+    // Build a dedicated Ultra-HD mesh at 500x360 resolution for the STL export
+    const { group: ultraGroup } = buildCompleteBoxMeshes(p, p.exportCols, p.exportRows);
+    ultraGroup.updateMatrixWorld(true);
+
+    let stl = 'solid shadowbox\n';
+    const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+    const cb = new THREE.Vector3(), ab = new THREE.Vector3();
+
+    ultraGroup.traverse(obj => {
+      if (!obj.isMesh || !obj.userData.exportStl) return;
+      const geom = obj.geometry.clone();
+      geom.applyMatrix4(obj.matrixWorld);
+      const pos = geom.attributes.position;
+      const index = geom.index;
+
+      const writeTri = (i1, i2, i3) => {
+        vA.fromBufferAttribute(pos, i1);
+        vB.fromBufferAttribute(pos, i2);
+        vC.fromBufferAttribute(pos, i3);
+        cb.subVectors(vC, vB);
+        ab.subVectors(vA, vB);
+        cb.cross(ab).normalize();
+        stl += `facet normal ${cb.x} ${cb.y} ${cb.z}\n  outer loop\n`;
+        stl += `    vertex ${vA.x} ${vA.y} ${vA.z}\n`;
+        stl += `    vertex ${vB.x} ${vB.y} ${vB.z}\n`;
+        stl += `    vertex ${vC.x} ${vC.y} ${vC.z}\n`;
+        stl += `  endloop\nendfacet\n`;
+      };
+
+      if (index) {
+        for (let i = 0; i < index.count; i += 3) {
+          writeTri(index.getX(i), index.getX(i+1), index.getX(i+2));
+        }
+      } else {
+        for (let i = 0; i < pos.count; i += 3) {
+          writeTri(i, i+1, i+2);
+        }
+      }
+    });
+    stl += 'endsolid shadowbox\n';
+
+    const blob = new Blob([stl], { type: 'application/sla' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `shadowbox_ultraHD_${p.W}x${p.H}_ZL${p.ZL}mm.stl`;
+    a.click();
+    btn.textContent = origText;
+  }, 50);
+});
+
+function onResize() {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+}
+window.addEventListener('resize', onResize);
+setTimeout(() => {
+  onResize();
+  renderSourceToMask();
+  rebuildShadowBox();
+}, 50);
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
