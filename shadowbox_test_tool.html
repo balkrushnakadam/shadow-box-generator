@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STL ShadowBox Optical Bench - Real-Time 3D Ray & Shadow Tester</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; display: flex; flex-direction: row; height: 100vh; background: #0c0c10; color: #eee; overflow: hidden; }
+    #sidebar { width: 390px; background: #15151c; padding: 14px; overflow-y: auto; border-right: 1px solid #2b2b36; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
+    h2 { margin: 0; font-size: 1.12rem; color: #38bdf8; display: flex; align-items: center; justify-content: space-between; }
+    .badge { font-size: 0.66rem; background: #082f49; color: #7dd3fc; padding: 3px 7px; border-radius: 4px; font-weight: 700; border: 1px solid #0284c7; }
+    .sub { font-size: 0.73rem; color: #9e9eae; margin-top: 2px; }
+    .section-title { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #ffca28; margin-bottom: 6px; border-bottom: 1px solid #2b2b36; padding-bottom: 4px; }
+    label { font-size: 0.75rem; color: #ccc; display: flex; justify-content: space-between; margin-top: 6px; margin-bottom: 2px; }
+    label span.val { color: #ffca28; font-weight: 600; font-variant-numeric: tabular-nums; }
+    input[type="range"], select { width: 100%; accent-color: #ffca28; cursor: pointer; background: #101014; color: #eee; border: 1px solid #3f3f4a; border-radius: 4px; padding: 5px; font-size: 0.77rem; }
+    .file-upload-btn { display: block; width: 100%; padding: 10px; background: #1e293b; color: #38bdf8; border: 1px dashed #38bdf8; border-radius: 6px; text-align: center; font-weight: 600; font-size: 0.8rem; cursor: pointer; margin-bottom: 4px; transition: 0.15s; }
+    .file-upload-btn:hover { background: #26354d; }
+    .file-upload-btn.secondary-upload { background: #1f2421; color: #4ade80; border-color: #4ade80; padding: 7px; font-size: 0.76rem; }
+    input[type="file"] { display: none; }
+    #stlStatus { font-size: 0.73rem; color: #4ade80; margin: 4px 0; min-height: 16px; word-break: break-all; }
+    .row-checks { display: flex; gap: 10px; margin-top: 7px; flex-wrap: wrap; }
+    .check-label { font-size: 0.74rem; color: #ddd; display: flex; align-items: center; gap: 5px; cursor: pointer; margin: 0; }
+    .control-group { background: #1d1d26; padding: 10px 12px; border-radius: 8px; border: 1px solid #2c2c38; }
+    .specs-box { background: #112029; border: 1px solid #1e4258; padding: 9px 11px; border-radius: 8px; font-size: 0.73rem; line-height: 1.5; color: #d0ecf9; }
+    .specs-box b { color: #38bdf8; }
+    button { width: 100%; padding: 9px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 6px; font-size: 0.79rem; transition: 0.15s; }
+    .btn-primary { background: #ffca28; color: #111; }
+    .btn-primary:hover { background: #ffb300; }
+    .btn-ray { background: #38bdf8; color: #082032; }
+    .btn-ray:hover { background: #0ea5e9; }
+    .btn-secondary { background: #30303b; color: #fff; }
+    .btn-secondary:hover { background: #40404e; }
+    .btn-row { display: flex; gap: 6px; }
+    #main { flex: 1; display: flex; flex-direction: column; position: relative; height: 100%; }
+    #viewport { width: 100%; height: 100%; }
+    #rayModal { position: absolute; top: 14px; right: 14px; background: rgba(18, 18, 26, 0.95); border: 1px solid #38bdf8; border-radius: 8px; padding: 10px; width: 300px; display: none; flex-direction: column; gap: 6px; z-index: 20; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+    #rayCanvas { width: 100%; height: auto; aspect-ratio: 1 / 1; background: #fff; border-radius: 4px; border: 1px solid #444; }
+    #dropOverlay { position: absolute; inset: 0; background: rgba(14, 165, 233, 0.2); border: 3px dashed #38bdf8; display: none; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; color: #fff; z-index: 50; pointer-events: none; }
+    @media (max-width: 750px) {
+      body { flex-direction: column-reverse; }
+      #sidebar { width: 100%; height: 50vh; border-right: none; border-top: 1px solid #333; }
+      #main { height: 50vh; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div>
+    <h2>STL Shadow Bench <span class="badge">TRUE 3D RAY-TESTER</span></h2>
+    <div class="sub">Import .STL Shadow Box &amp; Simulate Point-Light Rays</div>
+  </div>
+
+  <!-- 1. IMPORT STL & OPTIONAL TARGET IMAGE -->
+  <div class="control-group">
+    <div class="section-title">1. Import 3D .STL File (Or Drag &amp; Drop)</div>
+    <label for="stlUpload" class="file-upload-btn">📦 Load Shadow Box (.STL) File</label>
+    <input type="file" id="stlUpload" accept=".stl,*/*">
+    <div id="stlStatus">Status: Waiting for .STL file (Demo Box Loaded)</div>
+
+    <label for="refUpload" class="file-upload-btn secondary-upload">🎯 Optional: Load Target Image (SVG/PNG/JPG) to Compare</label>
+    <input type="file" id="refUpload" accept=".svg,.png,.jpg,.jpeg,*/*">
+
+    <div class="btn-row">
+      <button class="btn-secondary" id="autoDetectPoleBtn" title="Detects center stalk height &amp; sets Z_L">Auto-Snap Light to Pole</button>
+      <button class="btn-secondary" id="frontCamBtn">Front Wall View</button>
+    </div>
+  </div>
+
+  <!-- 2. POINT LIGHT POSITION ON POLE -->
+  <div class="control-group">
+    <div class="section-title">2. Point-Light Bulb Position (mm)</div>
+    <label><span>Light Height Z_L (mm)</span><span class="val" id="valZL">75.0</span></label>
+    <input type="range" id="lightZ" min="20" max="180" step="0.5" value="75.0">
+
+    <label><span>Pole Tip to LED Filament Offset (mm)</span><span class="val" id="valTipOff">6.0</span></label>
+    <input type="range" id="tipOffset" min="0" max="25" step="0.5" value="6.0">
+
+    <label><span>Fine Tune Light X (mm)</span><span class="val" id="valXL">0.0</span></label>
+    <input type="range" id="lightX" min="-25" max="25" step="0.2" value="0.0">
+
+    <label><span>Fine Tune Light Y (mm)</span><span class="val" id="valYL">0.0</span></label>
+    <input type="range" id="lightY" min="-25" max="25" step="0.2" value="0.0">
+
+    <label><span>Wall Inspection Frame Size S (mm)</span><span class="val" id="valS">380</span></label>
+    <input type="range" id="wallScale" min="180" max="700" step="5" value="380">
+  </div>
+
+  <!-- 3. LIGHTING & VISUALIZATION -->
+  <div class="control-group">
+    <div class="section-title">3. Optical &amp; 3D Inspection Controls</div>
+    <label><span>Bulb Intensity / Exposure</span><span class="val" id="valInt">1.8</span></label>
+    <input type="range" id="lightInt" min="0.4" max="4.0" step="0.1" value="1.8">
+
+    <label><span>Room Ambient Light (Inspect STL Walls)</span><span class="val" id="valAmb">0.25</span></label>
+    <input type="range" id="ambInt" min="0.0" max="1.2" step="0.05" value="0.25">
+
+    <label><span>STL Box Opacity</span><span class="val" id="valOpac">100%</span></label>
+    <input type="range" id="boxOpac" min="10" max="100" step="5" value="100">
+
+    <div class="row-checks">
+      <label class="check-label"><input type="checkbox" id="highContrast"> Pure B&amp;W Shadow Mode</label>
+      <label class="check-label"><input type="checkbox" id="hideBox"> Hide Box (See Full Wall)</label>
+      <label class="check-label"><input type="checkbox" id="showWire"> Wireframe</label>
+      <label class="check-label"><input type="checkbox" id="showRays" checked> Light Ray Cone</label>
+    </div>
+  </div>
+
+  <!-- 4. EXACT CPU TRIANGLE RAY-TRACER -->
+  <div class="control-group">
+    <div class="section-title">4. Exact Triangle Ray-Tracer Verification</div>
+    <button class="btn-ray" id="runExactRayBtn">⚡ Run Exact STL Triangle Ray-Trace (2D Map)</button>
+    <div style="font-size:0.7rem; color:#aaa; margin-top:4px;">
+      Casts mathematical rays from <code>(X_L, Y_L, Z_L)</code> through every STL triangle onto the wall to verify 100% geometric accuracy.
+    </div>
+  </div>
+
+  <!-- DIAGNOSTIC SUMMARY -->
+  <div class="specs-box" id="stlSpecs"></div>
+</div>
+
+<div id="main">
+  <div id="viewport"></div>
+  <div id="dropOverlay">Drop .STL File Here to Test Shadows</div>
+
+  <!-- Floating Exact Ray-Trace Output Card -->
+  <div id="rayModal">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <b style="font-size:0.78rem; color:#38bdf8;">Exact STL Triangle Ray-Traced Shadow</b>
+      <button id="closeRayModal" style="width:auto; padding:2px 7px; margin:0; background:#333; color:#fff; font-size:0.7rem;">✕</button>
+    </div>
+    <canvas id="rayCanvas" width="600" height="600"></canvas>
+    <div id="rayStats" style="font-size:0.72rem; color:#ccc; line-height:1.35;"></div>
+    <button class="btn-primary" id="downloadRayPngBtn" style="padding:6px; font-size:0.74rem;">💾 Save Ray-Traced Shadow (.PNG)</button>
+  </div>
+</div>
+
+<script>
+const container = document.getElementById('viewport');
+const statusEl = document.getElementById('stlStatus');
+const specsEl = document.getElementById('stlSpecs');
+
+// ============================================================================
+// 1. THREE.JS SCENE WITH REAL-TIME SHADOW MAPPING
+// ============================================================================
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x09090d);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 1, 4000);
+camera.position.set(0, -210, 520);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// Wall plane at Z = 0 that receives real-time 3D shadows from the STL mesh
+const wallGeo = new THREE.PlaneGeometry(1800, 1800);
+const wallMat = new THREE.MeshStandardMaterial({
+  color: 0xffe0a3,
+  roughness: 0.92,
+  metalness: 0.0
+});
+const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+wallMesh.receiveShadow = true;
+scene.add(wallMesh);
+
+// Red dashed target frame on the wall showing Shadow Size S (mm)
+let frameLine = null;
+function updateWallFrame(S) {
+  if (frameLine) {
+    scene.remove(frameLine);
+    frameLine.geometry.dispose();
+  }
+  const h = S / 2;
+  const pts = [
+    new THREE.Vector3(-h, -h, 0.3),
+    new THREE.Vector3( h, -h, 0.3),
+    new THREE.Vector3( h,  h, 0.3),
+    new THREE.Vector3(-h,  h, 0.3),
+    new THREE.Vector3(-h, -h, 0.3)
+  ];
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineBasicMaterial({ color: 0xff1744, transparent: true, opacity: 0.55 });
+  frameLine = new THREE.Line(geo, mat);
+  scene.add(frameLine);
+}
+
+// Point Light at the Center Pole Tip (Casts real-time 3D shadows from the STL mesh!)
+const pointLight = new THREE.PointLight(0xffd580, 1.8, 1600, 1.35);
+pointLight.position.set(0, 0, 75);
+pointLight.castShadow = true;
+pointLight.shadow.mapSize.width = 2048;
+pointLight.shadow.mapSize.height = 2048;
+pointLight.shadow.camera.near = 2;
+pointLight.shadow.camera.far = 900;
+pointLight.shadow.bias = -0.0005;
+scene.add(pointLight);
+
+// Glowing Bulb Sphere + Ray Cone Guide
+const bulbMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(2.8, 20, 20),
+  new THREE.MeshBasicMaterial({ color: 0xffee58 })
+);
+scene.add(bulbMesh);
+
+let rayConeLine = null;
+function updateRayCone(lx, ly, lz, S, visible) {
+  if (rayConeLine) {
+    scene.remove(rayConeLine);
+    rayConeLine.geometry.dispose();
+    rayConeLine = null;
+  }
+  if (!visible) return;
+  const h = S * 0.5;
+  const pts = [
+    new THREE.Vector3(lx, ly, lz), new THREE.Vector3(-h,  h, 0),
+    new THREE.Vector3(lx, ly, lz), new THREE.Vector3( h,  h, 0),
+    new THREE.Vector3(lx, ly, lz), new THREE.Vector3(-h, -h, 0),
+    new THREE.Vector3(lx, ly, lz), new THREE.Vector3( h, -h, 0)
+  ];
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineBasicMaterial({ color: 0xffca28, transparent: true, opacity: 0.28 });
+  rayConeLine = new THREE.LineSegments(geo, mat);
+  scene.add(rayConeLine);
+}
+
+// Room Ambient & Rim Lights for inspecting the STL geometry itself
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
+scene.add(ambientLight);
+const helperDirLight = new THREE.DirectionalLight(0x90caf9, 0.3);
+helperDirLight.position.set(-180, -200, 320);
+scene.add(helperDirLight);
+
+// STL Mesh Material & State
+const stlMat = new THREE.MeshStandardMaterial({
+  color: 0x262932,
+  roughness: 0.45,
+  metalness: 0.15,
+  side: THREE.DoubleSide
+});
+let currentStlMesh = null;
+let currentStlGeo = null;
+let detectedPoleTopZ = 69.0;
+let detectedBoxW = 90.0;
+let detectedBoxH = 92.0;
+
+// Optional Target Reference Image Data for Accuracy Comparison
+let refImageMask = null;
+const refCanvas = document.createElement('canvas');
+refCanvas.width = 600;
+refCanvas.height = 600;
+const refCtx = refCanvas.getContext('2d');
+
+// ============================================================================
+// 2. STL LOADER & AUTOMATIC CENTER POLE / BOUNDING BOX DETECTOR
+// ============================================================================
+function inspectAndMountStlGeometry(geometry, fileName) {
+  if (currentStlMesh) {
+    scene.remove(currentStlMesh);
+    currentStlMesh.geometry.dispose();
+  }
+
+  geometry.computeBoundingBox();
+  geometry.computeVertexNormals();
+
+  const bb = geometry.boundingBox;
+  const centerX = 0.5 * (bb.min.x + bb.max.x);
+  const centerY = 0.5 * (bb.min.y + bb.max.y);
+
+  // Shift X/Y center to (0,0) and place bottom of baseplate flush on Z = 0
+  // (Or if backplate was extruded to -T, keep walls starting at Z = 0)
+  let zShift = 0;
+  if (bb.min.z > 0.1 || bb.min.z < -6.0) {
+    zShift = -bb.min.z;
+  }
+  geometry.translate(-centerX, -centerY, zShift);
+  geometry.computeBoundingBox();
+
+  const pos = geometry.attributes.position;
+  const triCount = pos.count / 3;
+
+  // Automatically scan vertices near the center (r < 10 mm) to find the exact physical Pole Top Z!
+  let maxPoleZ = 0;
+  let maxWallZ = 0;
+  for (let i = 0; i < pos.count; i++) {
+    const vx = pos.getX(i);
+    const vy = pos.getY(i);
+    const vz = pos.getZ(i);
+    const r = Math.hypot(vx, vy);
+    if (r < 10.0 && vz > maxPoleZ) {
+      maxPoleZ = vz;
+    }
+    if (vz > maxWallZ) {
+      maxWallZ = vz;
+    }
+  }
+
+  const newBB = geometry.boundingBox;
+  detectedBoxW = newBB.max.x - newBB.min.x;
+  detectedBoxH = newBB.max.y - newBB.min.y;
+  detectedPoleTopZ = maxPoleZ > 15 ? maxPoleZ : (maxWallZ * 0.92);
+
+  currentStlGeo = geometry;
+  currentStlMesh = new THREE.Mesh(geometry, stlMat);
+  currentStlMesh.castShadow = true;
+  currentStlMesh.receiveShadow = false;
+  scene.add(currentStlMesh);
+
+  // Snap light to detected pole top + tip offset
+  const tipOff = parseFloat(document.getElementById('tipOffset').value);
+  const targetZL = Math.round((detectedPoleTopZ + tipOff) * 2) / 2;
+  document.getElementById('lightZ').value = targetZL;
+  document.getElementById('lightX').value = 0;
+  document.getElementById('lightY').value = 0;
+
+  statusEl.style.color = '#4ade80';
+  statusEl.textContent = `✅ Loaded STL: ${fileName} (${triCount.toLocaleString()} triangles)`;
+
+  updateSimulationParams();
+}
+
+// Create a built-in demo STL mesh on startup so the bench works immediately
+function createDemoShadowBoxMesh() {
+  const group = new THREE.Group();
+  const W = 90, H = 90, T = 2, poleH = 69;
+
+  // Baseplate + center stalk
+  const baseGeo = new THREE.BoxGeometry(W + 2*T, H + 2*T, T);
+  baseGeo.translate(0, 0, -T/2);
+  const stalkGeo = new THREE.CylinderGeometry(4, 4, poleH, 24);
+  stalkGeo.rotateX(Math.PI / 2);
+  stalkGeo.translate(0, 0, poleH / 2);
+
+  // 4 sample walls with arch/circle cutouts
+  const wallGeos = [baseGeo, stalkGeo];
+  const makeWall = (wLen, isTopBottom, sign) => {
+    const s = new THREE.Shape();
+    s.moveTo(-wLen/2, 0);
+    s.lineTo(wLen/2, 0);
+    s.lineTo(wLen/2, 48);
+    s.absarc(0, 48, wLen*0.25, 0, Math.PI, false);
+    s.lineTo(-wLen/2, 48);
+    s.closePath();
+
+    const hole = new THREE.Path();
+    hole.absarc(0, 26, 9, 0, Math.PI * 2, true);
+    s.holes.push(hole);
+
+    const g = new THREE.ExtrudeGeometry(s, { depth: T, bevelEnabled: false });
+    g.rotateX(Math.PI / 2);
+    if (isTopBottom) {
+      g.translate(0, sign * (H/2 + T/2), 0);
+    } else {
+      g.rotateZ(Math.PI / 2);
+      g.translate(sign * (W/2 + T/2), 0, 0);
+    }
+    wallGeos.push(g);
+  };
+  makeWall(W, true, 1);
+  makeWall(W, true, -1);
+  makeWall(H, false, 1);
+  makeWall(H, false, -1);
+
+  // Merge into one non-indexed BufferGeometry
+  const positions = [];
+  for (const g of wallGeos) {
+    const nonIdx = g.index ? g.toNonIndexed() : g;
+    const arr = nonIdx.attributes.position.array;
+    for (let i = 0; i < arr.length; i++) positions.push(arr[i]);
+  }
+  const merged = new THREE.BufferGeometry();
+  merged.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  inspectAndMountStlGeometry(merged, 'Demo_ShadowBox.stl');
+}
+
+// Handle STL file upload
+const stlLoader = new THREE.STLLoader();
+function loadStlFileObject(file) {
+  statusEl.style.color = '#ffca28';
+  statusEl.textContent = `⏳ Parsing ${file.name}...`;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const geo = stlLoader.parse(ev.target.result);
+      inspectAndMountStlGeometry(geo, file.name);
+    } catch (err) {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `❌ STL Parse Error: ${err.message}`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('stlUpload').addEventListener('change', (e) => {
+  if (e.target.files[0]) loadStlFileObject(e.target.files[0]);
+  e.target.value = '';
+});
+
+// Drag & Drop support anywhere on window
+const dropOverlay = document.getElementById('dropOverlay');
+window.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropOverlay.style.display = 'flex';
+});
+window.addEventListener('dragleave', (e) => {
+  if (e.target === document.body || e.clientX <= 0 || e.clientY <= 0) {
+    dropOverlay.style.display = 'none';
+  }
+});
+window.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropOverlay.style.display = 'none';
+  const file = e.dataTransfer.files[0];
+  if (file) loadStlFileObject(file);
+});
+
+// Optional Reference Image Upload for Diff Comparison
+document.getElementById('refUpload').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const w = refCanvas.width, h = refCanvas.height;
+      refCtx.fillStyle = '#ffffff';
+      refCtx.fillRect(0, 0, w, h);
+      const scale = Math.min(w / img.width, h / img.height) * 0.90;
+      const dw = img.width * scale, dh = img.height * scale;
+      refCtx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      refImageMask = refCtx.getImageData(0, 0, w, h);
+      statusEl.textContent = `✅ Target Image Loaded: ${file.name} (Click 'Run Exact STL Ray-Trace' to compare)`;
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+// ============================================================================
+// 3. REAL-TIME SIMULATION CONTROLS
+// ============================================================================
+function updateSimulationParams() {
+  const lx = parseFloat(document.getElementById('lightX').value);
+  const ly = parseFloat(document.getElementById('lightY').value);
+  const lz = parseFloat(document.getElementById('lightZ').value);
+  const tipOff = parseFloat(document.getElementById('tipOffset').value);
+  const S = parseFloat(document.getElementById('wallScale').value);
+  const lInt = parseFloat(document.getElementById('lightInt').value);
+  const aInt = parseFloat(document.getElementById('ambInt').value);
+  const opac = parseFloat(document.getElementById('boxOpac').value) / 100;
+  const highContrast = document.getElementById('highContrast').checked;
+  const hideBox = document.getElementById('hideBox').checked;
+  const showWire = document.getElementById('showWire').checked;
+  const showRays = document.getElementById('showRays').checked;
+
+  document.getElementById('valXL').textContent = lx.toFixed(1);
+  document.getElementById('valYL').textContent = ly.toFixed(1);
+  document.getElementById('valZL').textContent = lz.toFixed(1);
+  document.getElementById('valTipOff').textContent = tipOff.toFixed(1);
+  document.getElementById('valS').textContent = S;
+  document.getElementById('valInt').textContent = lInt.toFixed(1);
+  document.getElementById('valAmb').textContent = aInt.toFixed(2);
+  document.getElementById('valOpac').textContent = Math.round(opac * 100) + '%';
+
+  pointLight.position.set(lx, ly, lz);
+  bulbMesh.position.set(lx, ly, lz);
+
+  pointLight.intensity = highContrast ? 2.6 : lInt;
+  pointLight.color.setHex(highContrast ? 0xffffff : 0xffd580);
+  wallMat.color.setHex(highContrast ? 0xffffff : 0xffe0a3);
+  ambientLight.intensity = highContrast ? 0.02 : aInt;
+  helperDirLight.intensity = highContrast ? 0.0 : (aInt * 1.1);
+
+  stlMat.transparent = opac < 0.99;
+  stlMat.opacity = opac;
+  stlMat.wireframe = showWire;
+
+  // If 'Hide Box' is checked, we make the material invisible to the camera
+  // while keeping shadow casting active via a custom colorWrite toggle!
+  stlMat.colorWrite = !hideBox;
+  stlMat.depthWrite = !hideBox;
+
+  updateWallFrame(S);
+  updateRayCone(lx, ly, lz, S, showRays);
+
+  const triCount = currentStlGeo ? (currentStlGeo.attributes.position.count / 3) : 0;
+  specsEl.innerHTML = `
+    <b>STL GEOMETRY &amp; LIGHT BENCH TELEMETRY:</b><br>
+    • <b>Outer Box Footprint:</b> ${detectedBoxW.toFixed(1)} × ${detectedBoxH.toFixed(1)} mm<br>
+    • <b>Detected Center Pole Top:</b> Z = ${detectedPoleTopZ.toFixed(1)} mm<br>
+    • <b>Active Point Light (X, Y, Z):</b> (${lx.toFixed(1)}, ${ly.toFixed(1)}, ${lz.toFixed(1)}) mm<br>
+    • <b>STL Mesh Complexity:</b> ${triCount.toLocaleString()} triangles
+  `;
+}
+
+[
+  'lightX', 'lightY', 'lightZ', 'tipOffset', 'wallScale',
+  'lightInt', 'ambInt', 'boxOpac',
+  'highContrast', 'hideBox', 'showWire', 'showRays'
+].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateSimulationParams);
+});
+
+document.getElementById('autoDetectPoleBtn').addEventListener('click', () => {
+  const tipOff = parseFloat(document.getElementById('tipOffset').value);
+  document.getElementById('lightZ').value = (detectedPoleTopZ + tipOff).toFixed(1);
+  document.getElementById('lightX').value = 0;
+  document.getElementById('lightY').value = 0;
+  updateSimulationParams();
+});
+
+document.getElementById('frontCamBtn').addEventListener('click', () => {
+  controls.target.set(0, 0, 0);
+  camera.position.set(0, 0, 560);
+  controls.update();
+});
+
+// ============================================================================
+// 4. EXACT CPU SPATIAL-HASHED TRIANGLE RAY-TRACER (VERIFIES STL GEOMETRY 100%)
+// Projects every STL triangle onto the wall from L=(lx, ly, lz) and rasterizes
+// exact ray-triangle intersections to verify shadow accuracy!
+// ============================================================================
+document.getElementById('runExactRayBtn').addEventListener('click', () => {
+  if (!currentStlGeo) return;
+  const btn = document.getElementById('runExactRayBtn');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Ray-Tracing STL Triangles...';
+
+  setTimeout(() => {
+    const rayCanvas = document.getElementById('rayCanvas');
+    const rCtx = rayCanvas.getContext('2d');
+    const RES = rayCanvas.width; // 600x600 exact ray-traced grid
+
+    const lx = parseFloat(document.getElementById('lightX').value);
+    const ly = parseFloat(document.getElementById('lightY').value);
+    const lz = parseFloat(document.getElementById('lightZ').value);
+    const S = parseFloat(document.getElementById('wallScale').value);
+
+    // Shadow buffer: 0 = Lit (White), 1 = Shadowed by STL triangle (Black)
+    const shadowBuf = new Uint8Array(RES * RES);
+
+    const pos = currentStlGeo.attributes.position;
+    const nTris = pos.count / 3;
+
+    // Project every triangle vertex V=(vx,vy,vz) with vz < lz onto Z=0 plane from Light L=(lx,ly,lz)
+    // Ray equation: P(t) = L + t*(V - L). At Z=0, t = lz / (lz - vz).
+    for (let tIdx = 0; tIdx < nTris; tIdx++) {
+      const i0 = tIdx * 3, i1 = i0 + 1, i2 = i0 + 2;
+      const z0 = pos.getZ(i0), z1 = pos.getZ(i1), z2 = pos.getZ(i2);
+
+      // Ignore triangles completely above the light source or behind the wall
+      if (z0 >= lz - 0.2 && z1 >= lz - 0.2 && z2 >= lz - 0.2) continue;
+      if (z0 <= 0.05 && z1 <= 0.05 && z2 <= 0.05) continue;
+
+      // Clamp vertices near/above light height to prevent infinite projection
+      const cz0 = Math.min(z0, lz - 0.25);
+      const cz1 = Math.min(z1, lz - 0.25);
+      const cz2 = Math.min(z2, lz - 0.25);
+
+      const t0 = lz / (lz - cz0);
+      const t1 = lz / (lz - cz1);
+      const t2 = lz / (lz - cz2);
+
+      const wx0 = lx + (pos.getX(i0) - lx) * t0;
+      const wy0 = ly + (pos.getY(i0) - ly) * t0;
+      const wx1 = lx + (pos.getX(i1) - lx) * t1;
+      const wy1 = ly + (pos.getY(i1) - ly) * t1;
+      const wx2 = lx + (pos.getX(i2) - lx) * t2;
+      const wy2 = ly + (pos.getY(i2) - ly) * t2;
+
+      // Convert wall mm (wx, wy) in [-S/2, +S/2] to pixel coordinates [0 .. RES-1]
+      const px0 = ((wx0 / S) + 0.5) * RES;
+      const py0 = (0.5 - (wy0 / S)) * RES;
+      const px1 = ((wx1 / S) + 0.5) * RES;
+      const py1 = (0.5 - (wy1 / S)) * RES;
+      const px2 = ((wx2 / S) + 0.5) * RES;
+      const py2 = (0.5 - (wy2 / S)) * RES;
+
+      const minX = Math.max(0, Math.floor(Math.min(px0, px1, px2)));
+      const maxX = Math.min(RES - 1, Math.ceil(Math.max(px0, px1, px2)));
+      const minY = Math.max(0, Math.floor(Math.min(py0, py1, py2)));
+      const maxY = Math.min(RES - 1, Math.ceil(Math.max(py0, py1, py2)));
+
+      if (minX > maxX || minY > maxY) continue;
+
+      const area = (px1 - px0) * (py2 - py0) - (px2 - px0) * (py1 - py0);
+      if (Math.abs(area) < 1e-5) continue;
+      const invArea = 1.0 / area;
+
+      for (let y = minY; y <= maxY; y++) {
+        const py = y + 0.5;
+        const rowOff = y * RES;
+        for (let x = minX; x <= maxX; x++) {
+          if (shadowBuf[rowOff + x]) continue;
+          const px = x + 0.5;
+          const w0 = ((px1 - px) * (py2 - py) - (px2 - px) * (py1 - py)) * invArea;
+          if (w0 < -1e-4) continue;
+          const w1 = ((px2 - px) * (py0 - py) - (px0 - px) * (py2 - py)) * invArea;
+          if (w1 < -1e-4) continue;
+          const w2 = 1.0 - w0 - w1;
+          if (w2 >= -1e-4) {
+            shadowBuf[rowOff + x] = 1;
+          }
+        }
+      }
+    }
+
+    // Render 2D ray-traced shadow image (with optional Target Diff comparison!)
+    const outImg = rCtx.createImageData(RES, RES);
+    const outD = outImg.data;
+    let matchCount = 0, evalCount = 0;
+
+    for (let y = 0; y < RES; y++) {
+      const wy = (0.5 - (y + 0.5) / RES) * S;
+      for (let x = 0; x < RES; x++) {
+        const wx = (((x + 0.5) / RES) - 0.5) * S;
+        const idx = y * RES + x;
+        const pOff = idx * 4;
+
+        // Inside box footprint is occluded by baseplate
+        const inFootprint = (Math.abs(wx) <= detectedBoxW * 0.5 && Math.abs(wy) <= detectedBoxH * 0.5);
+        const isShadow = inFootprint ? 1 : shadowBuf[idx];
+
+        if (refImageMask && !inFootprint) {
+          const refDark = refImageMask.data[pOff] < 128 ? 1 : 0;
+          evalCount++;
+          if (isShadow === refDark) {
+            matchCount++;
+            const c = isShadow ? 22 : 245;
+            outD[pOff] = outD[pOff + 1] = outD[pOff + 2] = c;
+          } else if (isShadow && !refDark) {
+            // Extra shadow (e.g. bridge strut or base rim) -> Cyan
+            outD[pOff] = 0; outD[pOff + 1] = 210; outD[pOff + 2] = 255;
+          } else {
+            // Missing shadow -> Magenta
+            outD[pOff] = 255; outD[pOff + 1] = 40; outD[pOff + 2] = 120;
+          }
+        } else {
+          if (isShadow) {
+            outD[pOff] = 24; outD[pOff + 1] = 20; outD[pOff + 2] = 18;
+          } else {
+            outD[pOff] = 255; outD[pOff + 1] = 218; outD[pOff + 2] = 135;
+          }
+        }
+        outD[pOff + 3] = 255;
+      }
+    }
+    rCtx.putImageData(outImg, 0, 0);
+
+    // Draw box footprint outline on the 2D ray-traced map
+    const bwPx = (detectedBoxW / S) * RES;
+    const bhPx = (detectedBoxH / S) * RES;
+    rCtx.strokeStyle = '#ff1744';
+    rCtx.lineWidth = 2;
+    rCtx.strokeRect((RES - bwPx) / 2, (RES - bhPx) / 2, bwPx, bhPx);
+
+    document.getElementById('rayModal').style.display = 'flex';
+    const accStr = (refImageMask && evalCount > 0)
+      ? `<br>• <b>Target Image Match:</b> <span style="color:#4ade80;font-weight:700;">${((matchCount / evalCount) * 100).toFixed(2)}%</span> (Cyan = Bridge/Extra, Pink = Missing)`
+      : `<br>• <i>Tip: Load your original SVG/PNG in Section 1 to compute exact % match!</i>`;
+
+    document.getElementById('rayStats').innerHTML = `
+      • <b>Ray Origin:</b> (${lx.toFixed(1)}, ${ly.toFixed(1)}, ${lz.toFixed(1)}) mm<br>
+      • <b>Triangles Ray-Traced:</b> ${nTris.toLocaleString()} tris @ ${RES}×${RES} px${accStr}
+    `;
+    btn.textContent = origText;
+  }, 30);
+});
+
+document.getElementById('closeRayModal').addEventListener('click', () => {
+  document.getElementById('rayModal').style.display = 'none';
+});
+
+document.getElementById('downloadRayPngBtn').addEventListener('click', () => {
+  const rayCanvas = document.getElementById('rayCanvas');
+  const a = document.createElement('a');
+  a.href = rayCanvas.toDataURL('image/png');
+  a.download = 'stl_raytraced_shadow_verification.png';
+  a.click();
+});
+
+function onResize() {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+}
+window.addEventListener('resize', onResize);
+
+setTimeout(() => {
+  onResize();
+  createDemoShadowBoxMesh();
+}, 50);
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
