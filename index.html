@@ -145,16 +145,17 @@
   <!-- LIVE ACCURACY SUMMARY -->
   <div class="specs-box" id="specsSummary"></div>
 
-  <!-- 4. EXPORT -->
+    <!-- 4. EXPORT -->
   <div class="control-group">
     <div class="section-title">4. Export Sub-Pixel SVG &amp; Mitered Conical STL</div>
     <button class="btn-primary" id="exportSvgBtn">Download Sub-Pixel Bezier Template (.SVG)</button>
-    <button class="btn-stl" id="exportStlBtn">Download Mitered Conical 3D Print (.STL)</button>
+    <button class="btn-stl" id="exportStlBtn">Download Assembled 3D Box (.STL - For Sim/Print)</button>
+    <button class="btn-stl" id="exportFlatStlBtn" style="background:#a78bfa; color:#1e1b4b;">🧩 Download Flat-Lay 5-Piece Kit (.STL - No Supports!)</button>
     <a href="shadowbox_test_tool.html" target="_blank" style="display: block; width: 100%; padding: 9px; margin-top: 6px; background: #1f2421; color: #4ade80; border: 1px dashed #4ade80; border-radius: 6px; text-align: center; font-weight: 600; font-size: 0.79rem; text-decoration: none; transition: 0.15s;" onmouseover="this.style.background='#27332c'" onmouseout="this.style.background='#1f2421'">
       🔬 Open 3D STL Shadow Bench &amp; Tester ↗
     </a>
-
   </div>
+
 </div>
 
 <div id="main">
@@ -1492,6 +1493,188 @@ document.getElementById('exportStlBtn').addEventListener('click', () => {
     }
   }, 40);
 });
+
+  // ============================================================================
+// STAGE 6: EXPORT PRINTER-FRIENDLY FLAT-LAY 5-PIECE KIT (.STL - ZERO SUPPORTS)
+// Unfolds the 4 Mitered Conical Walls flat onto Z = 0 around a stepped alignment
+// baseplate so all 5 pieces print flat on the bed with ZERO overhangs!
+// ============================================================================
+function buildFlatLayKitGroup(p, cols, rows) {
+  const group = new THREE.Group();
+  const dummyMat = new THREE.MeshBasicMaterial();
+  const walls = traceSubPixelWallShapes(p, cols, rows);
+  const physicalPoleLen = Math.max(10, p.ZL - p.ledOffset);
+  const innerR = p.poleID / 2;
+  const outerR = p.poleOD / 2;
+
+  // 1. Center Baseplate resting on Z = 0..T, plus a 1.6mm raised inner alignment ledge (W x H)
+  // so the 4 flat-printed walls snap against the inner step at the exact (W, H) footprint!
+  const { backGeo, stalkGeo } = buildUnifiedBackplateAndStalkGeometry(
+    p.W, p.H, p.T, outerR, innerR, physicalPoleLen
+  );
+  backGeo.translate(0, 0, p.T);   // Shift from [-T..0] to [0..T]
+  stalkGeo.translate(0, 0, p.T);  // Sit stalk on top of baseplate
+
+  // Raised inner alignment lip (inset by 0.15mm for 3D printer kerf/tolerance)
+  const lipShape = new THREE.Shape();
+  const lw = Math.max(10, p.W / 2 - 0.15);
+  const lh = Math.max(10, p.H / 2 - 0.15);
+  lipShape.moveTo(-lw, -lh);
+  lipShape.lineTo( lw, -lh);
+  lipShape.lineTo( lw,  lh);
+  lipShape.lineTo(-lw,  lh);
+  lipShape.closePath();
+
+  // Hollow out the center of the alignment lip so it only forms a 3.5mm perimeter frame
+  const lipHole = new THREE.Path();
+  const lhw = Math.max(outerR + 1, lw - 3.5);
+  const lhh = Math.max(outerR + 1, lh - 3.5);
+  lipHole.moveTo(-lhw, -lhh);
+  lipHole.lineTo(-lhw,  lhh);
+  lipHole.lineTo( lhw,  lhh);
+  lipHole.lineTo( lhw, -lhh);
+  lipHole.closePath();
+  lipShape.holes.push(lipHole);
+
+  const lipGeo = new THREE.ExtrudeGeometry(lipShape, { depth: 1.6, bevelEnabled: false });
+  lipGeo.translate(0, 0, p.T);
+
+  const mBack = new THREE.Mesh(backGeo, dummyMat); mBack.userData.exportStl = true;
+  const mStalk = new THREE.Mesh(stalkGeo, dummyMat); mStalk.userData.exportStl = true;
+  const mLip = new THREE.Mesh(lipGeo, dummyMat); mLip.userData.exportStl = true;
+  group.add(mBack, mStalk, mLip);
+
+  // 2. Unfold the 4 Mitered Conical Walls flat onto Z = 0..T around the baseplate
+  // Inner face lies flat on Z = 0, Outer mitered face points up at Z = T
+  const gap = 8.0; // 8mm spacing between baseplate and unfolded walls on the build plate
+
+  for (const [key, wObj] of Object.entries(walls)) {
+    const geom = buildConicalExtrudedWallGeometry(key, wObj, p);
+
+    if (key === 'top') {
+      // Standing at Y = +H/2..+(H/2+T). Move inner face to Y=0, rotate -90 deg around X so inner face is on Z=0
+      geom.translate(0, -p.H / 2, 0);
+      geom.rotateX(-Math.PI / 2);
+      geom.translate(0, p.H / 2 + p.T + gap, 0);
+    } else if (key === 'bottom') {
+      // Standing at Y = -H/2..-(H/2+T). Move inner face to Y=0, rotate +90 deg around X so inner face is on Z=0
+      geom.translate(0, p.H / 2, 0);
+      geom.rotateX(Math.PI / 2);
+      geom.translate(0, -(p.H / 2 + p.T + gap), 0);
+    } else if (key === 'right') {
+      // Standing at X = +W/2..+(W/2+T). Move inner face to X=0, rotate +90 deg around Y so inner face is on Z=0
+      geom.translate(-p.W / 2, 0, 0);
+      geom.rotateY(Math.PI / 2);
+      geom.translate(p.W / 2 + p.T + gap, 0, 0);
+    } else if (key === 'left') {
+      // Standing at X = -W/2..-(W/2+T). Move inner face to X=0, rotate -90 deg around Y so inner face is on Z=0
+      geom.translate(p.W / 2, 0, 0);
+      geom.rotateY(-Math.PI / 2);
+      geom.translate(-(p.W / 2 + p.T + gap), 0, 0);
+    }
+
+    geom.computeVertexNormals();
+    const wMesh = new THREE.Mesh(geom, dummyMat);
+    wMesh.userData.exportStl = true;
+    group.add(wMesh);
+  }
+
+  return group;
+}
+
+document.getElementById('exportFlatStlBtn').addEventListener('click', () => {
+  const btn = document.getElementById('exportFlatStlBtn');
+  const origText = btn.textContent;
+  btn.textContent = '⏳ Building Flat-Lay 5-Piece STL...';
+
+  setTimeout(() => {
+    try {
+      const p = getParams();
+      const exportGroup = buildFlatLayKitGroup(p, 500, 380);
+      exportGroup.updateMatrixWorld(true);
+
+      const meshes = [];
+      let totalTriangles = 0;
+
+      exportGroup.traverse(obj => {
+        if (!obj.isMesh || !obj.userData.exportStl) return;
+        const geom = obj.geometry.clone();
+        geom.applyMatrix4(obj.matrixWorld);
+        const index = geom.index;
+        const pos = geom.attributes.position;
+        totalTriangles += index ? (index.count / 3) : (pos.count / 3);
+        meshes.push(geom);
+      });
+
+      const bufferByteLength = 84 + (totalTriangles * 50);
+      const arrayBuffer = new ArrayBuffer(bufferByteLength);
+      const dataView = new DataView(arrayBuffer);
+      dataView.setUint32(80, totalTriangles, true);
+
+      let byteOffset = 84;
+      const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+      const cb = new THREE.Vector3(), ab = new THREE.Vector3();
+
+      const writeTri = (pos, i1, i2, i3) => {
+        vA.fromBufferAttribute(pos, i1);
+        vB.fromBufferAttribute(pos, i2);
+        vC.fromBufferAttribute(pos, i3);
+        cb.subVectors(vC, vB);
+        ab.subVectors(vA, vB);
+        cb.cross(ab).normalize();
+
+        dataView.setFloat32(byteOffset, cb.x, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, cb.y, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, cb.z, true); byteOffset += 4;
+
+        dataView.setFloat32(byteOffset, vA.x, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vA.y, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vA.z, true); byteOffset += 4;
+
+        dataView.setFloat32(byteOffset, vB.x, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vB.y, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vB.z, true); byteOffset += 4;
+
+        dataView.setFloat32(byteOffset, vC.x, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vC.y, true); byteOffset += 4;
+        dataView.setFloat32(byteOffset, vC.z, true); byteOffset += 4;
+
+        dataView.setUint16(byteOffset, 0, true); byteOffset += 2;
+      };
+
+      for (const geom of meshes) {
+        const pos = geom.attributes.position;
+        const index = geom.index;
+        if (index) {
+          for (let i = 0; i < index.count; i += 3) {
+            writeTri(pos, index.getX(i), index.getX(i + 1), index.getX(i + 2));
+          }
+        } else {
+          for (let i = 0; i < pos.count; i += 3) {
+            writeTri(pos, i, i + 1, i + 2);
+          }
+        }
+        geom.dispose();
+      }
+
+      const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shadowbox_FLAT_KIT_${p.W}x${p.H}_ZL${p.ZL}mm.stl`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      statusEl.style.color = '#4ade80';
+      statusEl.textContent = `✅ Exported Flat-Lay 5-Piece STL (${totalTriangles.toLocaleString()} tris, 0 Supports Needed)`;
+    } catch (err) {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `❌ Flat STL Export Error: ${err.message}`;
+    } finally {
+      btn.textContent = origText;
+    }
+  }, 40);
+});
+
 
 function onResize() {
   camera.aspect = container.clientWidth / container.clientHeight;
